@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CondoScope — ต้นแบบ 3D Building Explorer</title>
+<style>
+  :root { --accent:#2563eb; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --panel:rgba(255,255,255,.96);
+    font-family: "IBM Plex Sans Thai","Noto Sans Thai","Sukhumvit Set","Leelawadee UI",Tahoma,system-ui,sans-serif; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html,body { margin:0; height:100%; background:#0b1220; color:var(--ink); overflow:hidden; }
+  #stage { position:fixed; inset:0; }
+  #stage canvas { display:block; touch-action:none; cursor:grab; }
+  .chip { background:var(--panel); border:1px solid rgba(15,23,42,.08); border-radius:12px; box-shadow:0 8px 24px rgba(2,6,23,.18); }
+  header.top { position:fixed; top:16px; left:16px; right:16px; display:flex; gap:12px; justify-content:space-between; align-items:flex-start; pointer-events:none; }
+  header.top > * { pointer-events:auto; }
+  .brand { padding:12px 16px; }
+  .brand .logo { font-weight:700; letter-spacing:.02em; font-size:13px; color:var(--accent); }
+  .brand h1 { margin:2px 0 0; font-size:18px; font-weight:600; }
+  .brand p { margin:2px 0 0; font-size:12.5px; color:var(--muted); }
+  .tools { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; padding:8px; }
+  .seg { display:inline-flex; background:#f1f5f9; border-radius:9px; padding:3px; }
+  .seg button { border:0; background:transparent; padding:7px 12px; border-radius:7px; font:inherit; font-size:13.5px; color:var(--muted); cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); font-weight:600; }
+  .toggle { display:inline-flex; gap:8px; align-items:center; font-size:13.5px; padding:6px 8px; cursor:pointer; user-select:none; }
+  .toggle input { width:16px; height:16px; accent-color:var(--accent); }
+  select, .btn, .icon { font:inherit; }
+  select { font-size:13.5px; padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:#fff; max-width:200px; }
+  .icon { border:1px solid var(--line); background:#fff; border-radius:9px; padding:6px 10px; cursor:pointer; font-size:13.5px; }
+  :focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+  #tooltip { position:fixed; left:0; top:0; pointer-events:none; padding:10px 12px; display:flex; flex-direction:column; gap:2px; font-size:13px; min-width:190px; z-index:5; }
+  #tooltip b { font-size:14.5px; }
+  #tooltip span { color:#334155; }
+  #tooltip .price { color:var(--ink); font-weight:600; font-size:14px; margin-top:2px; }
+  .badge { display:inline-flex !important; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--c) !important; background:color-mix(in srgb, var(--c) 12%, white); padding:3px 9px; border-radius:999px; margin-top:4px; width:max-content; }
+  .badge i { width:8px; height:8px; border-radius:50%; background:var(--c); display:inline-block; }
+  #panel { position:fixed; top:110px; right:16px; width:330px; padding:18px; transform:translateX(120%); transition:transform .25s ease; z-index:6; max-height:calc(100% - 130px); overflow:auto; }
+  #panel.open { transform:none; }
+  .panel-head { display:flex; justify-content:space-between; align-items:flex-start; }
+  .eyebrow { margin:0; font-size:12.5px; color:var(--muted); }
+  #panel h2 { margin:2px 0 6px; font-size:22px; }
+  .big-price { font-size:24px; font-weight:700; margin:12px 0 0; }
+  .muted { color:var(--muted); margin:2px 0 0; font-size:13px; }
+  dl { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin:16px 0; }
+  dl div { border-top:1px solid var(--line); padding-top:8px; }
+  dt { font-size:12px; color:var(--muted); } dd { margin:2px 0 0; font-size:14px; font-weight:500; }
+  .actions { display:flex; flex-direction:column; gap:8px; }
+  .btn { border-radius:10px; padding:11px 14px; font-size:14.5px; font-weight:600; cursor:pointer; border:1px solid transparent; }
+  .btn.primary { background:var(--accent); color:#fff; } .btn.primary:disabled { background:#cbd5e1; cursor:not-allowed; }
+  .btn.ghost { background:#fff; border-color:var(--line); color:var(--ink); }
+  .fine { font-size:11.5px; color:var(--muted); margin:12px 0 0; line-height:1.5; }
+  #legend { position:fixed; left:16px; bottom:56px; padding:10px 14px; display:none; gap:14px; font-size:13px; flex-wrap:wrap; }
+  #legend.show { display:flex; }
+  #legend span { display:inline-flex; gap:6px; align-items:center; } #legend i { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  #cutNote { position:fixed; left:50%; top:110px; transform:translateX(-50%); padding:8px 8px 8px 14px; display:flex; gap:10px; align-items:center; font-size:13.5px; z-index:4; }
+  #hint { position:fixed; left:50%; bottom:58px; transform:translateX(-50%); color:#e2e8f0; font-size:13px; background:rgba(15,23,42,.55); padding:7px 14px; border-radius:999px; transition:opacity .6s; white-space:nowrap; }
+  #hint.fade { opacity:0; }
+  footer.disclaimer { position:fixed; left:0; right:0; bottom:0; padding:9px 16px; font-size:12px; color:#cbd5e1; background:rgba(2,6,23,.6); display:flex; justify-content:space-between; gap:12px; }
+  #toast { position:fixed; left:50%; bottom:100px; transform:translate(-50%, 20px); background:#0f172a; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; opacity:0; transition:.25s; pointer-events:none; z-index:9; }
+  #toast.show { opacity:1; transform:translate(-50%,0); }
+  #nogl { position:fixed; inset:0; display:grid; place-items:center; color:#fff; text-align:center; padding:24px; }
+  @media (max-width: 760px) {
+    header.top { top:10px; left:10px; right:10px; flex-direction:column; align-items:stretch; }
+    .brand { padding:10px 12px; } .brand h1 { font-size:16px; }
+    .tools { justify-content:flex-start; }
+    select { max-width:none; flex:1; }
+    #panel { top:auto; bottom:0; right:0; left:0; width:auto; border-radius:16px 16px 0 0; transform:translateY(110%); max-height:56%; }
+    #panel.open { transform:none; }
+    #cutNote { top:auto; bottom:96px; width:calc(100% - 20px); }
+    #legend { bottom:44px; left:10px; right:10px; }
+    #hint { bottom:48px; font-size:12px; }
+    footer.disclaimer { font-size:11px; }
+    footer .stats-wide { display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage" role="application" aria-label="อาคารคอนโด 3 มิติ ลากเพื่อหมุน คลิกห้องเพื่อดูข้อมูล"></div>
+<header class="top">
+  <div class="brand chip">
+    <div class="logo">CONDOSCOPE · ต้นแบบ</div>
+    <h1>Noventa Ari</h1>
+    <p>พญาไท กรุงเทพฯ · 2 อาคาร · <span id="stats"></span></p>
+  </div>
+  <div class="tools chip">
+    <div class="seg" role="group" aria-label="ช่วงเวลา">
+      <button id="btnNight" aria-pressed="true">พลบค่ำ</button>
+      <button id="btnDay" aria-pressed="false">กลางวัน</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="statusToggle"> แสดงสถานะห้อง</label>
+    <select id="floorSel" aria-label="เลือกชั้น"></select>
+    <button class="icon" id="resetView">รีเซ็ตมุมมอง</button>
+  </div>
+</header>
+<div id="cutNote" class="chip" hidden><span></span><button class="icon" id="clearCut">ดูทั้งตึก</button></div>
+<div id="tooltip" class="chip" hidden></div>
+<aside id="panel" class="chip" aria-live="polite"></aside>
+<div id="legend" class="chip" aria-label="คำอธิบายสี">
+  <span><i style="background:#22c55e"></i>ว่าง</span><span><i style="background:#f59e0b"></i>จองแล้ว</span>
+  <span><i style="background:#e11d48"></i>ขายแล้ว</span><span><i style="background:#64748b"></i>ไม่เปิดขาย</span>
+</div>
+<div id="hint">ลากเพื่อหมุน · เลื่อนหรือบีบนิ้วเพื่อซูม · คลิกห้องเพื่อดูข้อมูล</div>
+<div id="toast" role="status"></div>
+<footer class="disclaimer"><span>ข้อมูลโครงการจำลองเพื่อการสาธิต ไม่มีการประกาศขายอสังหาริมทรัพย์จริง</span><span class="stats-wide">ต้นแบบทดสอบ · Three.js</span></footer>
+<div id="nogl" hidden><p>อุปกรณ์นี้ไม่รองรับ WebGL<br>เวอร์ชันจริงจะสลับไปใช้ภาพอาคาร 2 มิติและรายการห้องแทน</p></div>
+<script>/*BUNDLE*/</script>
+</body>
+</html>
