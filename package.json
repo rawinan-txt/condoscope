@@ -4,6 +4,7 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "gen": "npx tsx packages/shared/scripts/write-fallback.ts"
+    "gen": "npx tsx packages/shared/scripts/write-fallback.ts",
+    "e2e": "npm run e2e -w web"
   }
 }

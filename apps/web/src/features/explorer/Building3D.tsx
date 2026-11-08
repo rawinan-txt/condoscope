@@ -145,10 +145,14 @@ function Probe({ x, unitsRef }: { x: ExplorerApi; unitsRef: React.RefObject<Inst
         if (!u || !b || !mesh || !x.isVisible(u)) return null;
         const ndc = unitWorldCenter(b, u).project(camera);
         if (Math.abs(ndc.x) > 0.95 || Math.abs(ndc.y) > 0.95 || ndc.z > 1) return null;
-        ray.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
-        const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
-        if (!hit || x.units[hit.instanceId!].id !== id) return null;
         const r = gl.domElement.getBoundingClientRect();
+        // the unit must cover a few pixels around its centre, so a click there cannot land on a neighbour
+        const px = 3;
+        for (const [dx, dy] of [[0, 0], [px, 0], [-px, 0], [0, px], [0, -px]]) {
+          ray.setFromCamera(new Vector2(ndc.x + (2 * dx) / r.width, ndc.y + (2 * dy) / r.height), camera);
+          const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
+          if (!hit || x.units[hit.instanceId!].id !== id) return null;
+        }
         return { x: r.left + ((ndc.x + 1) / 2) * r.width, y: r.top + ((1 - ndc.y) / 2) * r.height };
       },
     };
