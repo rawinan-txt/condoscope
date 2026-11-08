@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router';
 import { useReportSource } from '../../components/Layout';
 import NotFound, { LoadError } from '../../components/NotFound';
 import { getExplorer, NotFoundError } from '../../services/api';
+import BuildingView from './BuildingView';
 import Filters from './Filters';
 import FloorSelector from './FloorSelector';
 import Legend from './Legend';
@@ -48,9 +49,8 @@ function Explorer({ payload }: { payload: ExplorerPayload }) {
           <h1 className="text-xl font-semibold">{payload.project.name}</h1>
           <p className="text-sm text-slate-600">{payload.project.neighborhood} · {payload.project.province}</p>
         </div>
-        <div className="flex h-[60vh] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
-          {/* Building view: SVG (Task 6) and 3D (Task 7) */}
-          ภาพตึก
+        <div className="h-[60vh] rounded-lg border border-slate-200 bg-slate-50">
+          <BuildingView x={x} />
         </div>
         <div className="mt-3"><Legend /></div>
       </div>

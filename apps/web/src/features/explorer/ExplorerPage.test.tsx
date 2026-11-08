@@ -14,7 +14,7 @@ describe('ExplorerPage', () => {
 
   it('opens the details panel for a unit picked from the list', async () => {
     at('/explorer/1');
-    await userEvent.click(await screen.findByRole('button', { name: /^ห้อง A-1805 / }));
+    await userEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: /^ห้อง A-1805 / }));
     const panel = screen.getByRole('region', { name: 'รายละเอียดห้อง' });
     expect(within(panel).getByRole('heading', { name: 'ห้อง A-1805' })).toBeInTheDocument();
     expect(within(panel).getByRole('link', { name: 'ดูรายละเอียดห้อง' }).getAttribute('href')).toMatch(/\/unit\/\d+$/);
