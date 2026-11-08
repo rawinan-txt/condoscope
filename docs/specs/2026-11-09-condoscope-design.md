@@ -1,6 +1,6 @@
 # CondoScope — Design Spec (v1)
 
-> สถานะ: **รอผู้ใช้ตรวจ** · วันที่ 2026-11-09
+> สถานะ: **อนุมัติแล้ว** (รวมข้อ 13) · วันที่ 2026-11-09
 > เอกสารนี้ต่อยอดจาก `docs/original-spec.md` (Project Source of Truth เดิม)
 > **กรณีที่ขัดกัน ให้ยึดเอกสารนี้** ส่วนเรื่องที่เอกสารนี้ไม่ได้พูดถึง ให้ยึดสเปกเดิม
 
@@ -134,3 +134,20 @@ packages/shared  ── ตัวสร้างข้อมูลแบบ dete
 
 - สร้างบัญชี Cloudflare แบบฟรี (ไม่ต้องผูกบัตร) แล้วสร้าง API token สำหรับ GitHub Actions
 - เปิดใช้ GitHub Pages ของ repo
+
+## 13. การตัดสินใจเพิ่มเติมหลังตรวจสเปก (อนุมัติ 2026-11-09)
+
+ข้อนี้มีผลเหนือข้อ 5–8 และสเปกเดิมในจุดที่ขัดกัน
+
+1. **แปลนห้องและภาพภายในผูกกับประเภทห้อง ไม่ผูกต่อห้อง:** เทมเพลตแปลน (ตำแหน่งห้องย่อยและ hotspot เป็น %) อยู่ในโค้ด `packages/shared` ภาพเก็บในตาราง `unit_type_images (id, unit_type, room_key, image_url, caption, sort_order)` และ**ตัด** `floor_plans`, `floor_plan_hotspots`, `unit_images` ออก ส่วน API `/units/:id/floor-plan` และ `/units/:id/images` ยังมีอยู่ แต่คืนข้อมูลตามประเภทห้องของห้องนั้น
+2. **ตัด** `GET /api/buildings/:id/views`
+3. **เอกสาร:** มี README และ `docs/architecture.md` เพียงไฟล์เดียว (รวม ER diagram แบบ mermaid, database และ API)
+4. **ยังไม่ทำระบบจำกัดจำนวน request** ใช้ `Cache-Control` และ cache ของ Cloudflare ช่วยแทน
+5. การจองจำลองตามข้อ 4.5 ยังคงไว้
+6. **`direction` คำนวณจาก `facade` + `rotation_deg`** ในตัวสร้างข้อมูล (rotation 0 = ด้าน front หันทิศใต้) และเก็บเป็นคอลัมน์
+7. **`unit_type` เป็นตัวหลัก** `bedrooms`/`bathrooms` คิดจาก unit_type เสมอ (studio 0/1, 1br 1/1, 2br 2/1, 2br_plus 2/2) โดย `2br_plus` = 2 ห้องนอนขนาดใหญ่ ประมาณ 65–80 ตร.ม.
+8. **`total_floors` = ชั้นสูงสุดของตึก** (= `last_res_floor`)
+9. **ภาพโครงการ:** โครงการที่มี Explorer ใช้ภาพหน้าจอจากตึก 3D ส่วนโครงการอื่นใช้ placeholder ที่มีป้ายกำกับ
+10. **อีก 4 โครงการ** อยู่ที่กรุงเทพฯ (อ่อนนุช), นนทบุรี, ปทุมธานี, สมุทรปราการ API ค้นหารองรับ `q` (ชื่อ/ย่าน), `province`, `district`, `minPrice`, `maxPrice`
+11. ภาพภายในห้องยังค้างการตัดสินใจ (ข้อ 5) ระหว่างนี้ใช้ placeholder
+12. ตรวจเงื่อนไขการใช้งานล่าสุดของ OpenFreeMap ก่อนเริ่มทำ Map Explorer
