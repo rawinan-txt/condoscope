@@ -151,3 +151,6 @@ packages/shared  ── ตัวสร้างข้อมูลแบบ dete
 10. **อีก 4 โครงการ** อยู่ที่กรุงเทพฯ (อ่อนนุช), นนทบุรี, ปทุมธานี, สมุทรปราการ API ค้นหารองรับ `q` (ชื่อ/ย่าน), `province`, `district`, `minPrice`, `maxPrice`
 11. ภาพภายในห้องยังค้างการตัดสินใจ (ข้อ 5) ระหว่างนี้ใช้ placeholder
 12. ตรวจเงื่อนไขการใช้งานล่าสุดของ OpenFreeMap ก่อนเริ่มทำ Map Explorer
+13. **ทั้ง 5 โครงการมี Building Explorer 3D** (เพิ่มเติม 2026-11-09 แทนที่ข้อ 5 ที่ให้มีแค่ Featured) แต่ละโครงการมีรูปทรงต่างกัน (จำนวนทาวเวอร์ ชั้น ช่องห้อง และทิศที่หัน) ใช้โค้ด 3D ชุดเดียวกัน
+14. **Explorer เปิดทีละโครงการ** และแสดงทุกทาวเวอร์ในฉากเดียวตามต้นแบบ: route `#/explorer/:projectId` และ API `GET /api/projects/:id/explorer` (แทน `/api/buildings/:id/explorer` ในข้อ 7)
+15. `first_res_floor = podium_floors + 1` ทุกตึก
