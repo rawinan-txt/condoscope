@@ -1,0 +1,9 @@
+{
+  "name": "condoscope",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "gen": "npx tsx packages/shared/scripts/write-fallback.ts"
+  }
+}
