@@ -3,7 +3,7 @@ import { compassDirection } from './geometry';
 import { UNIT_TYPE_LABEL } from './labels';
 import { AMENITIES, PROJECTS } from './projects';
 import { mulberry32, SEED } from './rng';
-import type { Building, Dataset, Facade, Floor, Project, Unit, UnitStatus, UnitType } from './types';
+import type { Building, Dataset, Facade, Floor, Project, RoomKey, Unit, UnitStatus, UnitType } from './types';
 
 export const UNIT_TYPE_BEDROOMS: Record<UnitType, [bedrooms: number, bathrooms: number]> = {
   studio: [0, 1], '1br': [1, 1], '2br': [2, 1], '2br_plus': [2, 2],
@@ -18,6 +18,13 @@ export function unitNumber(code: string, floor: number, facade: Facade, bay: num
 }
 
 const pickStatus = (r: number): UnitStatus => (r < 0.5 ? 'available' : r < 0.64 ? 'reserved' : r < 0.94 ? 'sold' : 'unavailable');
+
+/** 17 AI images exist: 2-bedroom types reuse the 1br balcony, and the second bedroom reuses the first. */
+export function imageFile(type: UnitType, room: RoomKey): string {
+  if (room === 'balcony' && (type === '2br' || type === '2br_plus')) return '1br/balcony';
+  if (room === 'bedroom2') return `${type}/bedroom`;
+  return `${type}/${room}`;
+}
 
 const DEPTH = 17;
 const CORRIDOR = 2;
@@ -86,7 +93,7 @@ export function generate(seed: number = SEED): Dataset {
     floorPlan(type, 1, 1).hotspots.forEach((h, i) => {
       d.unit_type_images.push({
         id: d.unit_type_images.length + 1, unit_type: type, room_key: h.key,
-        image_url: `images/units/${type}/${h.key}.webp`, caption: h.label, sort_order: i,
+        image_url: `images/units/${imageFile(type, h.key)}.webp`, caption: h.label, sort_order: i,
       });
     });
   }

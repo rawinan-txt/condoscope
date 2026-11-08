@@ -70,3 +70,15 @@ describe('generate', () => {
     expect(JSON.parse(readFileSync(fallbackPath, 'utf8'))).toEqual(a);
   });
 });
+
+describe('imageFile', () => {
+  it('maps rooms to the 17 available images', async () => {
+    const { imageFile } = await import('../src');
+    expect(imageFile('studio', 'living')).toBe('studio/living');
+    expect(imageFile('2br', 'balcony')).toBe('1br/balcony');
+    expect(imageFile('2br_plus', 'balcony')).toBe('1br/balcony');
+    expect(imageFile('2br', 'bedroom2')).toBe('2br/bedroom');
+    const files = new Set(generate().unit_type_images.map((i) => i.image_url));
+    expect(files.size).toBe(17);
+  });
+});

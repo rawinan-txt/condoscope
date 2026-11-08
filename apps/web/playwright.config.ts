@@ -9,15 +9,16 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
-  use: { baseURL: 'http://localhost:4173/condoscope/', viewport: { width: 1400, height: 900 } },
+  use: { baseURL: 'http://localhost:4321/condoscope/', viewport: { width: 1400, height: 900 } },
   projects: [
     { name: 'chromium', grepInvert: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: SOFT_GL } } },
     { name: 'chromium-nogl', grep: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: ['--disable-webgl', '--disable-webgl2', '--disable-gpu'] } } },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4173 --strictPort',
-    url: 'http://localhost:4173/condoscope/',
-    reuseExistingServer: !process.env.CI,
+    // one node process (no npm wrapper) so Playwright can stop it cleanly on Windows; e2e script builds first
+    command: 'node ../../node_modules/vite/bin/vite.js preview --port 4321 --strictPort',
+    url: 'http://localhost:4321/condoscope/',
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

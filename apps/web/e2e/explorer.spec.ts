@@ -80,3 +80,22 @@ test('@nogl เครื่องไม่มี WebGL ใช้ภาพตึ�
   await svg.getByRole('button', { name: /^ห้อง A-1805 / }).click();
   await expect(panelTitle(page)).toHaveText('ห้อง A-1805');
 });
+
+test('คลิกห้อง → ดูรายละเอียด → hotspot → กลับไปเลือกห้องอื่น', async ({ page }) => {
+  await open3D(page, 1);
+  const [a, b] = await visibleUnits(page, 1, 2);
+  await page.mouse.click(a.x, a.y);
+  await page.getByRole('link', { name: 'ดูรายละเอียดห้อง' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(`ห้อง ${a.unit_number}`);
+  const plan = page.getByRole('group', { name: 'แปลนห้อง' });
+  await plan.getByRole('button', { name: 'ดูภาพ ครัว' }).click();
+  await expect(page.getByRole('figure')).toContainText('ครัว');
+  await page.getByRole('link', { name: 'กลับไปเลือกห้อง' }).click();
+  await expect(panelTitle(page)).toHaveText(`ห้อง ${a.unit_number}`);
+  await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
+  await page.waitForTimeout(1500);
+  const p = await page.evaluate((id) => window.__condoscope!.projectUnit(id), b.id);
+  expect(p).not.toBeNull();
+  await page.mouse.click(p!.x, p!.y);
+  await expect(panelTitle(page)).toHaveText(`ห้อง ${b.unit_number}`);
+});
