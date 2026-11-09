@@ -10,7 +10,9 @@ export default function TempHome() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const report = useReportSource();
   useEffect(() => {
-    searchProjects().then((r) => { setProjects(r.data.items); report(r.source); });
+    let current = true; // a late answer after the user left must not flip the banner of the next page
+    searchProjects().then((r) => { if (current) { setProjects(r.data.items); report(r.source); } });
+    return () => { current = false; };
   }, [report]);
 
   return (

@@ -1,6 +1,6 @@
 import { floorPlan, formatTHB, UNIT_TYPE_LABEL, unitDepth, type RoomKey, type UnitDetailPayload } from '@condoscope/shared';
 import { ArrowLeft } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useReportSource } from '../../components/Layout';
 import NotFound, { LoadError } from '../../components/NotFound';
@@ -16,13 +16,16 @@ export default function UnitPage() {
   const { unitId } = useParams();
   const report = useReportSource();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
+  const latest = useRef(0);
   const fetchData = useCallback(() => {
+    const mine = ++latest.current;
     setLoad({ state: 'loading' });
     getUnit(Number(unitId))
-      .then((r) => { setLoad({ state: 'ok', data: r.data }); report(r.source); })
-      .catch((e) => setLoad({ state: e instanceof NotFoundError ? 'missing' : 'error' }));
+      .then((r) => { if (mine === latest.current) { setLoad({ state: 'ok', data: r.data }); report(r.source); } })
+      .catch((e) => { if (mine === latest.current) setLoad({ state: e instanceof NotFoundError ? 'missing' : 'error' }); });
   }, [unitId, report]);
-  useEffect(fetchData, [fetchData]);
+  // leaving the page retires its pending request (see ExplorerPage)
+  useEffect(() => { fetchData(); return () => { latest.current++; }; }, [fetchData]);
 
   if (load.state === 'loading') return <div className="mx-auto max-w-6xl animate-pulse px-4 py-8"><div className="h-96 rounded-lg bg-slate-100" /></div>;
   if (load.state === 'missing') return <NotFound message="ไม่พบห้องนี้" />;

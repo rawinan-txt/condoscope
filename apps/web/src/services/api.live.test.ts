@@ -56,6 +56,24 @@ describe('falls back, and says so, when the API cannot be trusted', () => {
     expect(r.data.units).toHaveLength(624);
   });
 
+  it.each([['{}'], ['{"ok":true}'], ['{"units":"nope"}'], ['[]']])('200 JSON of the wrong shape %s is not trusted (explorer)', async (body) => {
+    stubFetch(async () => json(body));
+    const r = await getExplorer(1);
+    expect(r.source).toBe('fallback');
+    expect(r.data.units).toHaveLength(624);
+  });
+
+  it('wrong-shaped JSON falls back for every call', async () => {
+    stubFetch(async () => json({ ok: true }));
+    const unit = await getUnit(1);
+    expect(unit.source).toBe('fallback');
+    expect(unit.data).toEqual(buildUnitDetail(d, 1));
+    expect((await getProject(1)).source).toBe('fallback');
+    const page = await searchProjects();
+    expect(page.source).toBe('fallback');
+    expect(page.data).toEqual(searchProjectsLocal(d, {}));
+  });
+
   it('gives up after API_TIMEOUT_MS when the API never answers', async () => {
     vi.useFakeTimers();
     stubFetch((_url, init) => new Promise((_res, rej) => init!.signal!.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')))));

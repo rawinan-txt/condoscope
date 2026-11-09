@@ -31,10 +31,10 @@ async function readJson(res: Response): Promise<unknown> {
 
 /**
  * Asks the live API. Returns undefined whenever the answer cannot be trusted (no API configured, network error,
- * timeout, 5xx, a page that is not JSON, broken JSON) so the caller falls back to the bundled data.
+ * timeout, 5xx, a page that is not JSON, broken JSON, JSON of the wrong shape) so the caller falls back to the bundled data.
  * Throws NotFoundError only for a 400/404 that really is the API's own error format.
  */
-async function fetchLive<T>(path: string): Promise<T | undefined> {
+async function fetchLive<T>(path: string, valid: (body: unknown) => boolean): Promise<T | undefined> {
   const base = apiBase();
   if (!base) return undefined;
   const ctrl = new AbortController();
@@ -43,7 +43,7 @@ async function fetchLive<T>(path: string): Promise<T | undefined> {
     const res = await fetch(base + path, { signal: ctrl.signal });
     const body = await readJson(res);
     if ((res.status === 400 || res.status === 404) && isApiError(body)) throw new NotFoundError(path);
-    if (!res.ok || typeof body !== 'object' || body === null) return undefined;
+    if (!res.ok || !valid(body)) return undefined;
     return body as T;
   } catch (e) {
     if (e instanceof NotFoundError) throw e;
@@ -53,8 +53,17 @@ async function fetchLive<T>(path: string): Promise<T | undefined> {
   }
 }
 
-async function load<T>(path: string, what: string, local: (d: Dataset) => T | null): Promise<Result<T>> {
-  const live = await fetchLive<T>(path);
+// Just enough of each payload that the pages cannot crash on a stale or mis-deployed API (the contract tests guard the rest).
+const rec = (b: unknown): b is Record<string, unknown> => typeof b === 'object' && b !== null && !Array.isArray(b);
+const SHAPE = {
+  page: (b: unknown) => rec(b) && Array.isArray(b.items) && typeof b.total === 'number',
+  project: (b: unknown) => rec(b) && rec(b.project) && Array.isArray(b.buildings) && Array.isArray(b.amenities) && Array.isArray(b.availability),
+  explorer: (b: unknown) => rec(b) && rec(b.project) && Array.isArray(b.buildings) && Array.isArray(b.units),
+  unit: (b: unknown) => rec(b) && rec(b.project) && rec(b.building) && rec(b.unit) && Array.isArray(b.images),
+};
+
+async function load<T>(path: string, what: string, valid: (body: unknown) => boolean, local: (d: Dataset) => T | null): Promise<Result<T>> {
+  const live = await fetchLive<T>(path, valid);
   if (live !== undefined) return { data: live, source: 'live' };
   const data = local(await loadFallback());
   if (data === null) throw new NotFoundError(what);
@@ -69,13 +78,13 @@ function queryString(p: ProjectSearchParams): string {
 }
 
 export const searchProjects = async (p: ProjectSearchParams = {}): Promise<Result<ProjectPage>> =>
-  load(`/api/projects${queryString(p)}`, 'projects', (d) => searchProjectsLocal(d, p));
+  load(`/api/projects${queryString(p)}`, 'projects', SHAPE.page, (d) => searchProjectsLocal(d, p));
 
 export const getProject = async (id: number): Promise<Result<ProjectDetailPayload>> =>
-  load(`/api/projects/${requireId(id)}`, `project ${id}`, (d) => buildProjectDetail(d, id));
+  load(`/api/projects/${requireId(id)}`, `project ${id}`, SHAPE.project, (d) => buildProjectDetail(d, id));
 
 export const getExplorer = async (projectId: number): Promise<Result<ExplorerPayload>> =>
-  load(`/api/projects/${requireId(projectId)}/explorer`, `project ${projectId}`, (d) => buildExplorer(d, projectId));
+  load(`/api/projects/${requireId(projectId)}/explorer`, `project ${projectId}`, SHAPE.explorer, (d) => buildExplorer(d, projectId));
 
 export const getUnit = async (unitId: number): Promise<Result<UnitDetailPayload>> =>
-  load(`/api/units/${requireId(unitId)}`, `unit ${unitId}`, (d) => buildUnitDetail(d, unitId));
+  load(`/api/units/${requireId(unitId)}`, `unit ${unitId}`, SHAPE.unit, (d) => buildUnitDetail(d, unitId));
