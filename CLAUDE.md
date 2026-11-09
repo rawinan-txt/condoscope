@@ -18,8 +18,16 @@
   - SSAO ใช้แทน N8AO (N8AO พังกับ three 0.187) และใช้เงา PCF (three 0.187 ตัด PCFSoft)
   - เรื่องเล็กที่ยังไม่แก้ (ผู้ใช้ตัดสินใจ): `hasWebGL()` ไม่คืน WebGL context, `TempHome` ไม่มี error state, CanvasTexture ของ `City` ไม่ถูก dispose, hook ทดสอบ `window.__condoscope` อยู่ใน production, ยังไม่มี unit test สำหรับ `#/explorer/abc`
   - ✅ กล้อง 3D หมุนไปหาห้องที่เลือกจากรายการ/คีย์บอร์ดเมื่อห้องนั้นมองไม่เห็น (`unitViewGoal` ใน `scene/layout.ts`) — e2e 12 ผ่าน, Vitest 34 ผ่าน
-  - 📝 **แผน 2 (API Hono + D1) เขียนแล้ว รอผู้ใช้อ่านและอนุมัติ — ห้ามเริ่มเขียนโค้ดจนกว่าจะอนุมัติ:** `docs/plans/2026-11-09-plan-2-api-d1.md` (10 task; ตารางบนสุดของแผนคือการตัดสินใจแทนผู้ใช้ที่ต้องตรวจ)
-  - ⏳ **ขั้นถัดไป:** ผู้ใช้ตัดสินใจ merge `feat/plan-1` → `main` และ push · อนุมัติแผน 2 → ทำแผน 2 → เขียนแผน 3 (หน้าแรกแบบค้นหาตามสเปกข้อ 8.1, Search, Project, Map, Deploy)
+- ✅ **แผน 1 merge เข้า `main` แล้ว** (ผู้ใช้ทำเอง)
+- 🔨 **แผน 2 (API Hono + D1) โค้ดครบ 10 task บน branch `feat/plan-2`** (`docs/plans/2026-11-09-plan-2-api-d1.md`) — อัปเดต 2026-11-09 · **เหลือ: ผู้ตรวจอิสระดูทั้ง branch → แก้ที่ตรวจเจอ → ผู้ใช้ตัดสินใจ merge**
+  - ทำแล้ว: API 10 endpoint อ่านอย่างเดียว (Hono + zod), schema D1 + seed จาก `packages/shared`, ชั้น SQL ที่ test เทียบผลกับ fallback ทุกเคส, CORS/แคช/ปิดเมธอดเขียน, เว็บเรียก API จริงก่อนแล้ว fallback พร้อมแบนเนอร์, e2e รัน API จริง + จำลอง API ล่ม
+  - Test: Vitest shared 44 + api 209 + web 51 ผ่าน, Playwright e2e 16 ผ่าน · `docs/architecture.md` มี ER, ตาราง endpoint, กติกา error/CORS/แคช, โควตาฟรี
+  - บั๊กจริงที่ test จับได้ระหว่างทำ: D1 จำกัด `LIKE` pattern ราว 50 ไบต์ → คำค้นไทยยาว 17 ตัวอักษรขึ้นไปตอบ 500 จึงใช้ `instr(lower(...))` แทน
+  - รันในเครื่อง: `npm run db:reset` → `npm run api:dev` (พอร์ต 8788) → ตั้ง `VITE_API_URL=http://localhost:8788` ใน `apps/web/.env.local` · ทดสอบเบราว์เซอร์ `npm run e2e`
+  - ⚠️ บน Windows โปรเซสที่ Playwright/`wrangler dev` เปิดอาจค้างหลังหยุดกลางคัน (ปิดแค่ตัวแม่แล้ว `workerd` ลูกยังรับพอร์ต) จึงตั้งพอร์ตเปลี่ยนได้ด้วย `E2E_PORT` / `E2E_API_PORT`
+  - ⏳ **ก่อนแผน 3 ผู้ใช้ต้องเตรียม (สเปกข้อ 12):** บัญชี Cloudflare แบบฟรี (ไม่ต้องผูกบัตร) + API token สำหรับ GitHub Actions + เปิด GitHub Pages ของ repo
+  - ⏳ **ต้องวัดตอน deploy จริง:** CPU ต่อ request ของ explorer (เพดาน 10 ms บน Workers ฟรี), `cf-cache-status` บน `*.workers.dev`, จำนวนแถวที่ D1 อ่านต่อวัน · **ห้าม seed ฐานข้อมูลจริงซ้ำหลายรอบ** (1 รอบเขียนราว 12,000 แถว เพดานฟรี 100,000/วัน)
+  - ⏳ **ขั้นถัดไป:** แผน 3 (หน้าแรกแบบค้นหาตามสเปกข้อ 8.1, Search, Project Detail, Map, Deploy, README)
   - ⚠️ หน้า `/` ตอนนี้เป็นรายการโครงการชั่วคราว (`components/TempHome.tsx`) ลิงก์ตรงไปตึก 3D ซึ่งยังไม่ตรงสเปกข้อ 8.1 — แผน 3 จะแทนด้วยหน้าค้นหา
   - ⚠️ บน Windows Playwright ค้างประมาณ 5 นาทีตอนปิดเซิร์ฟเวอร์หลังรัน test เสร็จ (ผล test ไม่กระทบ) · e2e ใช้พอร์ต 4321
   - บันทึกการตัดสินใจระหว่างพัฒนาอยู่ใน `.superpowers/sdd/2026-11-09-plan-1-data-explorer-unit/progress.md` (ไม่อยู่ใน git)
