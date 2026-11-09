@@ -19,9 +19,10 @@
   - เรื่องเล็กที่ยังไม่แก้ (ผู้ใช้ตัดสินใจ): `hasWebGL()` ไม่คืน WebGL context, `TempHome` ไม่มี error state, CanvasTexture ของ `City` ไม่ถูก dispose, hook ทดสอบ `window.__condoscope` อยู่ใน production, ยังไม่มี unit test สำหรับ `#/explorer/abc`
   - ✅ กล้อง 3D หมุนไปหาห้องที่เลือกจากรายการ/คีย์บอร์ดเมื่อห้องนั้นมองไม่เห็น (`unitViewGoal` ใน `scene/layout.ts`) — e2e 12 ผ่าน, Vitest 34 ผ่าน
 - ✅ **แผน 1 merge เข้า `main` แล้ว** (ผู้ใช้ทำเอง)
-- 🔨 **แผน 2 (API Hono + D1) โค้ดครบ 10 task บน branch `feat/plan-2`** (`docs/plans/2026-11-09-plan-2-api-d1.md`) — อัปเดต 2026-11-09 · **เหลือ: ผู้ตรวจอิสระดูทั้ง branch → แก้ที่ตรวจเจอ → ผู้ใช้ตัดสินใจ merge**
+- ✅ **แผน 2 (API Hono + D1) เสร็จบน branch `feat/plan-2`** (`docs/plans/2026-11-09-plan-2-api-d1.md`) — อัปเดต 2026-11-09 · ตรวจโดยผู้ตรวจอิสระแล้วและแก้ครบ · **เหลือ: ผู้ใช้ตัดสินใจ merge เข้า `main` และ push**
+  - ผู้ตรวจเจอ 0 ร้ายแรง / 2 สำคัญ (แก้แล้ว: คำตอบเก่าของหน้าที่ออกมาแล้วไม่เขียนทับหน้าใหม่หรือแบนเนอร์, JSON ผิดรูปจาก API ไม่ถูกถือเป็นข้อมูลจริง) / 6 เล็ก (ยังไม่แก้ ผู้ใช้ตัดสินใจ): ค้นหาแล้ว API ตอบ 400 จะกลายเป็น "ไม่พบข้อมูล" ทั้งที่ fallback รับอินพุตเดียวกันได้ (ให้ตรวจ/จำกัดที่หน้าค้นหาในแผน 3), HEAD ไม่มี Cache-Control, 405 ไม่มี CORS header, test หนึ่งข้ออาจผ่านโดยไม่ได้ตรวจ, การเรียงลำดับเมื่อเสมอกันของ fallback ใช้ `localeCompare` ส่วน SQL ใช้ลำดับไบนารี, CPU ของ explorer ยังไม่ได้วัด
   - ทำแล้ว: API 10 endpoint อ่านอย่างเดียว (Hono + zod), schema D1 + seed จาก `packages/shared`, ชั้น SQL ที่ test เทียบผลกับ fallback ทุกเคส, CORS/แคช/ปิดเมธอดเขียน, เว็บเรียก API จริงก่อนแล้ว fallback พร้อมแบนเนอร์, e2e รัน API จริง + จำลอง API ล่ม
-  - Test: Vitest shared 44 + api 209 + web 51 ผ่าน, Playwright e2e 16 ผ่าน · `docs/architecture.md` มี ER, ตาราง endpoint, กติกา error/CORS/แคช, โควตาฟรี
+  - Test: Vitest shared 44 + api 209 + web 59 ผ่าน, Playwright e2e 16 ผ่าน · `docs/architecture.md` มี ER, ตาราง endpoint, กติกา error/CORS/แคช, โควตาฟรี
   - บั๊กจริงที่ test จับได้ระหว่างทำ: D1 จำกัด `LIKE` pattern ราว 50 ไบต์ → คำค้นไทยยาว 17 ตัวอักษรขึ้นไปตอบ 500 จึงใช้ `instr(lower(...))` แทน
   - รันในเครื่อง: `npm run db:reset` → `npm run api:dev` (พอร์ต 8788) → ตั้ง `VITE_API_URL=http://localhost:8788` ใน `apps/web/.env.local` · ทดสอบเบราว์เซอร์ `npm run e2e`
   - ⚠️ บน Windows โปรเซสที่ Playwright/`wrangler dev` เปิดอาจค้างหลังหยุดกลางคัน (ปิดแค่ตัวแม่แล้ว `workerd` ลูกยังรับพอร์ต) จึงตั้งพอร์ตเปลี่ยนได้ด้วย `E2E_PORT` / `E2E_API_PORT`
