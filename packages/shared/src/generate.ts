@@ -41,6 +41,7 @@ export function generate(seed: number = SEED): Dataset {
       province: spec.province, district: spec.district, neighborhood: spec.neighborhood,
       latitude: spec.latitude, longitude: spec.longitude, address_display: spec.address_display,
       thumbnail_url: null, starting_price: 0, total_floors: 0, total_units: 0, is_featured: d.projects.length === 0,
+      created_at: `${spec.launched}T00:00:00Z`,
     };
     d.projects.push(project);
     const projectUnits: Unit[] = [];

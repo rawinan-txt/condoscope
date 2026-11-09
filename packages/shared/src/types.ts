@@ -1,3 +1,5 @@
+import type { FloorPlan } from './floorplan';
+
 export type UnitType = 'studio' | '1br' | '2br' | '2br_plus';
 export type UnitStatus = 'available' | 'reserved' | 'sold' | 'unavailable';
 export type Facade = 'front' | 'back';
@@ -9,6 +11,8 @@ export interface Project {
   latitude: number; longitude: number; address_display: string;
   thumbnail_url: string | null; starting_price: number;
   total_floors: number; total_units: number; is_featured: boolean;
+  /** ISO launch date, e.g. 2026-03-01T00:00:00Z (used to sort by newest) */
+  created_at: string;
 }
 
 export interface Building {
@@ -43,6 +47,17 @@ export interface Dataset {
 export type UnitView = Unit & { floor_number: number };
 /** Whole project: every tower. */
 export interface ExplorerPayload { project: Project; buildings: Building[]; units: UnitView[]; }
+export type ProjectSort = 'recommended' | 'price_asc' | 'price_desc' | 'newest';
+export interface ProjectSearchParams {
+  q?: string; province?: string; district?: string; minPrice?: number; maxPrice?: number;
+  bedrooms?: 0 | 1 | 2; sort?: ProjectSort; limit?: number; offset?: number;
+}
+export interface ProjectPage { items: Project[]; total: number; limit: number; offset: number }
+/** min_price = cheapest available unit of that type, null when none is available */
+export interface TypeAvailability { unit_type: UnitType; available: number; min_price: number | null }
+export interface ProjectDetailPayload { project: Project; buildings: Building[]; amenities: Amenity[]; availability: TypeAvailability[] }
+export interface UnitFloorPlanPayload { unit_type: UnitType; plan: FloorPlan }
+
 export interface UnitDetailPayload { project: Project; building: Building; unit: UnitView; images: UnitTypeImage[]; }
 
 /** Single error format of the API: { error: { code, message } }. */

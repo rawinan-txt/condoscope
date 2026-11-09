@@ -12,6 +12,8 @@
 export interface TowerSpec { code: string; bays: number[]; firstFloor: number; lastFloor: number; origin: [number, number]; }
 export interface ProjectSpec {
   slug: string; name: string; description: string;
+  /** launch date YYYY-MM-DD, becomes created_at */
+  launched: string;
   province: string; district: string; neighborhood: string; address_display: string;
   latitude: number; longitude: number; basePricePerSqm: number;
   podium: number; rotation: number; towers: TowerSpec[];
@@ -19,7 +21,7 @@ export interface ProjectSpec {
 
 export const PROJECTS: ProjectSpec[] = [
   {
-    slug: 'noventa-ari', name: 'Noventa Ari',
+    slug: 'noventa-ari', name: 'Noventa Ari', launched: '2026-03-01',
     description: 'คอนโดสองทาวเวอร์บนโพเดียมสวนลอยฟ้า ในซอยอารีย์ เดินถึงร้านกาแฟและรถไฟฟ้า BTS อารีย์',
     province: 'กรุงเทพมหานคร', district: 'พญาไท', neighborhood: 'อารีย์', address_display: 'ซอยอารีย์ เขตพญาไท กรุงเทพฯ',
     latitude: 13.7797, longitude: 100.5449, basePricePerSqm: 150000, podium: 6, rotation: 0,
@@ -29,14 +31,14 @@ export const PROJECTS: ProjectSpec[] = [
     ],
   },
   {
-    slug: 'selvara-on-nut', name: 'Selvara On Nut',
+    slug: 'selvara-on-nut', name: 'Selvara On Nut', launched: '2026-05-15',
     description: 'คอนโดทาวเวอร์เดียวใกล้ BTS อ่อนนุช ห้องหันรับลมตะวันออก–ตะวันตก มีสระว่ายน้ำบนโพเดียม',
     province: 'กรุงเทพมหานคร', district: 'พระโขนง', neighborhood: 'อ่อนนุช', address_display: 'ถนนสุขุมวิท 77 เขตพระโขนง กรุงเทพฯ',
     latitude: 13.7056, longitude: 100.6011, basePricePerSqm: 115000, podium: 5, rotation: 90,
     towers: [{ code: 'A', bays: [6.8, 3.2, 3.2, 4, 3.2, 3.2, 6.8], firstFloor: 6, lastFloor: 32, origin: [0, 0] }],
   },
   {
-    slug: 'kaelo-khae-rai', name: 'Kaelo Khae Rai',
+    slug: 'kaelo-khae-rai', name: 'Kaelo Khae Rai', launched: '2026-01-20',
     description: 'คอนโดสองอาคารใกล้แยกแคราย เดินทางสะดวกด้วยรถไฟฟ้าสายสีม่วง เหมาะกับครอบครัวเล็ก',
     province: 'นนทบุรี', district: 'เมืองนนทบุรี', neighborhood: 'แคราย', address_display: 'ถนนงามวงศ์วาน อำเภอเมืองนนทบุรี จังหวัดนนทบุรี',
     latitude: 13.859, longitude: 100.5285, basePricePerSqm: 85000, podium: 4, rotation: 0,
@@ -46,14 +48,14 @@ export const PROJECTS: ProjectSpec[] = [
     ],
   },
   {
-    slug: 'thalora-rangsit', name: 'Thalora Rangsit',
+    slug: 'thalora-rangsit', name: 'Thalora Rangsit', launched: '2025-11-10',
     description: 'คอนโดโลว์ไรส์ราคาเข้าถึงง่าย ใกล้ห้างใหญ่และมหาวิทยาลัยย่านรังสิต',
     province: 'ปทุมธานี', district: 'ธัญบุรี', neighborhood: 'รังสิต', address_display: 'ถนนรังสิต-นครนายก อำเภอธัญบุรี จังหวัดปทุมธานี',
     latitude: 13.9888, longitude: 100.6178, basePricePerSqm: 48000, podium: 3, rotation: 30,
     towers: [{ code: 'A', bays: [7, 3.2, 4, 4, 3.2, 7], firstFloor: 4, lastFloor: 20, origin: [0, 0] }],
   },
   {
-    slug: 'marivo-paknam', name: 'Marivo Paknam',
+    slug: 'marivo-paknam', name: 'Marivo Paknam', launched: '2026-08-05',
     description: 'คอนโดห้องกว้างใกล้ปากแม่น้ำเจ้าพระยา ห้องมุมขนาดใหญ่ เดินทางเข้าเมืองด้วย BTS สายสุขุมวิท',
     province: 'สมุทรปราการ', district: 'เมืองสมุทรปราการ', neighborhood: 'ปากน้ำ', address_display: 'ถนนสุขุมวิท อำเภอเมืองสมุทรปราการ จังหวัดสมุทรปราการ',
     latitude: 13.5993, longitude: 100.5968, basePricePerSqm: 70000, podium: 5, rotation: 180,
