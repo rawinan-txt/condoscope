@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "condoscope-api",
+  "main": "src/index.ts",
+  // workerd 1.20261104 is the newest runtime shipped with the installed wrangler
+  "compatibility_date": "2026-11-04",
+  "vars": { "ALLOWED_ORIGINS": "https://rawinan-txt.github.io" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "condoscope",
+      // placeholder for local dev/tests only; plan 3 replaces it with the real id from `wrangler d1 create`
+      "database_id": "local-placeholder",
+      "migrations_dir": "../../database/migrations"
+    }
+  ]
+}

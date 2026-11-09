@@ -44,3 +44,7 @@ export type UnitView = Unit & { floor_number: number };
 /** Whole project: every tower. */
 export interface ExplorerPayload { project: Project; buildings: Building[]; units: UnitView[]; }
 export interface UnitDetailPayload { project: Project; building: Building; unit: UnitView; images: UnitTypeImage[]; }
+
+/** Single error format of the API: { error: { code, message } }. */
+export type ApiErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'METHOD_NOT_ALLOWED' | 'INTERNAL' | 'UNAVAILABLE';
+export interface ApiErrorBody { error: { code: ApiErrorCode; message: string } }
