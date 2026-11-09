@@ -18,7 +18,8 @@
   - SSAO ใช้แทน N8AO (N8AO พังกับ three 0.187) และใช้เงา PCF (three 0.187 ตัด PCFSoft)
   - เรื่องเล็กที่ยังไม่แก้ (ผู้ใช้ตัดสินใจ): `hasWebGL()` ไม่คืน WebGL context, `TempHome` ไม่มี error state, CanvasTexture ของ `City` ไม่ถูก dispose, hook ทดสอบ `window.__condoscope` อยู่ใน production, ยังไม่มี unit test สำหรับ `#/explorer/abc`
   - ✅ กล้อง 3D หมุนไปหาห้องที่เลือกจากรายการ/คีย์บอร์ดเมื่อห้องนั้นมองไม่เห็น (`unitViewGoal` ใน `scene/layout.ts`) — e2e 12 ผ่าน, Vitest 34 ผ่าน
-  - ⏳ **ขั้นถัดไป:** ผู้ใช้ตัดสินใจ merge `feat/plan-1` → `main` และ push · เขียนแผน 2 (Worker + D1) → แผน 3 (หน้าแรกแบบค้นหาตามสเปกข้อ 8.1, Search, Project, Map, Deploy)
+  - 📝 **แผน 2 (API Hono + D1) เขียนแล้ว รอผู้ใช้อ่านและอนุมัติ — ห้ามเริ่มเขียนโค้ดจนกว่าจะอนุมัติ:** `docs/plans/2026-11-09-plan-2-api-d1.md` (10 task; ตารางบนสุดของแผนคือการตัดสินใจแทนผู้ใช้ที่ต้องตรวจ)
+  - ⏳ **ขั้นถัดไป:** ผู้ใช้ตัดสินใจ merge `feat/plan-1` → `main` และ push · อนุมัติแผน 2 → ทำแผน 2 → เขียนแผน 3 (หน้าแรกแบบค้นหาตามสเปกข้อ 8.1, Search, Project, Map, Deploy)
   - ⚠️ หน้า `/` ตอนนี้เป็นรายการโครงการชั่วคราว (`components/TempHome.tsx`) ลิงก์ตรงไปตึก 3D ซึ่งยังไม่ตรงสเปกข้อ 8.1 — แผน 3 จะแทนด้วยหน้าค้นหา
   - ⚠️ บน Windows Playwright ค้างประมาณ 5 นาทีตอนปิดเซิร์ฟเวอร์หลังรัน test เสร็จ (ผล test ไม่กระทบ) · e2e ใช้พอร์ต 4321
   - บันทึกการตัดสินใจระหว่างพัฒนาอยู่ใน `.superpowers/sdd/2026-11-09-plan-1-data-explorer-unit/progress.md` (ไม่อยู่ใน git)
