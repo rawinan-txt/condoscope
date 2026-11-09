@@ -3,10 +3,10 @@ import { Environment, OrbitControls, PerformanceMonitor } from '@react-three/dre
 import { Bloom, EffectComposer, SSAO } from '@react-three/postprocessing';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3 } from 'three';
+import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3, type Camera } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import City from './scene/City';
-import { homeView, projectBounds, towerMatrix, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import { homeView, projectBounds, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
 import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
@@ -103,7 +103,7 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
       <Landscape r={bounds} seed={seed} time={time} />
       <City r={bounds} seed={seed} time={time} />
       <Towers x={x} unitsRef={unitsRef} onHover={onHover} onPick={(u) => x.select(u.id)} />
-      <CameraRig x={x} home={home} bounds={bounds} />
+      <CameraRig x={x} home={home} bounds={bounds} unitsRef={unitsRef} />
       <Probe x={x} unitsRef={unitsRef} />
       {low ? (
         <EffectComposer key="low" multisampling={0}>
@@ -120,13 +120,20 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
 }
 
 /** Orbit controls plus a smooth move to the home view or to a cut floor. Stops as soon as the user drags. */
-function CameraRig({ x, home, bounds }: { x: ExplorerApi; home: { position: Vec3; target: Vec3 }; bounds: Bounds }) {
+function CameraRig({ x, home, bounds, unitsRef }: { x: ExplorerApi; home: { position: Vec3; target: Vec3 }; bounds: Bounds; unitsRef: React.RefObject<InstancedMesh | null> }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const goal = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
-  const camera = useThree((s) => s.camera);
+  const { camera, gl } = useThree();
 
-  const { cutFloor, buildings } = x;
+  const { cutFloor, buildings, selectedId } = x;
   useEffect(() => { goal.current = viewFor(cutFloor, buildings, home); }, [cutFloor, buildings, home]);
+  // a unit picked from the list or keyboard may be out of sight (e.g. back facade): bring it into view
+  useEffect(() => {
+    if (selectedId === null || screenPoint(x, selectedId, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 0)) return;
+    const u = x.unit(selectedId)!;
+    const v = unitViewGoal(x.buildings.find((b) => b.id === u.building_id)!, u);
+    goal.current = { pos: new Vector3(...v.position), target: new Vector3(...v.target) };
+  }, [selectedId]); // only a new selection should move the camera, not every re-render
 
   useFrame((_, dt) => {
     const g = goal.current;
@@ -163,32 +170,29 @@ function viewFor(cut: CutFloor, buildings: Building[], home: { position: Vec3; t
 }
 
 /**
- * Test hook: screen position of a unit centre (used by the Playwright success-criterion test).
- * Returns null when the unit is off screen or hidden behind another unit.
+ * Screen position of a unit centre, or null when it is off screen, on a cut-away floor or hidden behind
+ * another unit. With px > 0 the unit must also cover px pixels around its centre (so a click cannot land on a neighbour).
  */
+function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, camera: Camera, rect: DOMRect, px: number) {
+  const u = x.unit(id);
+  const b = u && x.buildings.find((v) => v.id === u.building_id);
+  if (!u || !b || !mesh || !x.isVisible(u)) return null;
+  const ndc = unitWorldCenter(b, u).project(camera);
+  if (Math.abs(ndc.x) > 0.95 || Math.abs(ndc.y) > 0.95 || ndc.z > 1) return null;
+  const ray = new Raycaster();
+  for (const [dx, dy] of px ? [[0, 0], [px, 0], [-px, 0], [0, px], [0, -px]] : [[0, 0]]) {
+    ray.setFromCamera(new Vector2(ndc.x + (2 * dx) / rect.width, ndc.y + (2 * dy) / rect.height), camera);
+    const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
+    if (!hit || x.units[hit.instanceId!].id !== id) return null;
+  }
+  return { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height };
+}
+
+/** Test hook used by the Playwright success-criterion test. */
 function Probe({ x, unitsRef }: { x: ExplorerApi; unitsRef: React.RefObject<InstancedMesh | null> }) {
   const { camera, gl } = useThree();
   useEffect(() => {
-    const ray = new Raycaster();
-    window.__condoscope = {
-      projectUnit(id) {
-        const u = x.unit(id);
-        const b = u && x.buildings.find((v) => v.id === u.building_id);
-        const mesh = unitsRef.current;
-        if (!u || !b || !mesh || !x.isVisible(u)) return null;
-        const ndc = unitWorldCenter(b, u).project(camera);
-        if (Math.abs(ndc.x) > 0.95 || Math.abs(ndc.y) > 0.95 || ndc.z > 1) return null;
-        const r = gl.domElement.getBoundingClientRect();
-        // the unit must cover a few pixels around its centre, so a click there cannot land on a neighbour
-        const px = 3;
-        for (const [dx, dy] of [[0, 0], [px, 0], [-px, 0], [0, px], [0, -px]]) {
-          ray.setFromCamera(new Vector2(ndc.x + (2 * dx) / r.width, ndc.y + (2 * dy) / r.height), camera);
-          const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
-          if (!hit || x.units[hit.instanceId!].id !== id) return null;
-        }
-        return { x: r.left + ((ndc.x + 1) / 2) * r.width, y: r.top + ((1 - ndc.y) / 2) * r.height };
-      },
-    };
+    window.__condoscope = { projectUnit: (id) => screenPoint(x, id, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 3) };
     return () => { delete window.__condoscope; };
   }, [x, camera, gl, unitsRef]);
   return null;

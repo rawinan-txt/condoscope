@@ -99,3 +99,14 @@ test('คลิกห้อง → ดูรายละเอียด → hots
   await page.mouse.click(p!.x, p!.y);
   await expect(panelTitle(page)).toHaveText(`ห้อง ${b.unit_number}`);
 });
+
+test('เลือกห้องด้านหลังตึกจากรายการ กล้องหมุนไปให้เห็นห้องนั้น', async ({ page }) => {
+  await open3D(page, 1);
+  const back = data.units.find((u) => u.building_id === 1 && u.facade === 'back' && u.unit_number.startsWith('A-20'))!;
+  expect(await page.evaluate((id) => window.__condoscope!.projectUnit(id), back.id)).toBeNull(); // hidden from the start view
+  await page.getByRole('table').getByRole('button', { name: new RegExp(`^ห้อง ${back.unit_number} `) }).click();
+  await expect.poll(() => page.evaluate((id) => window.__condoscope!.projectUnit(id), back.id), { timeout: 10_000 }).not.toBeNull();
+  const p = (await page.evaluate((id) => window.__condoscope!.projectUnit(id), back.id))!;
+  await page.mouse.click(p.x, p.y);
+  await expect(panelTitle(page)).toHaveText(`ห้อง ${back.unit_number}`);
+});

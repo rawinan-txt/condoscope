@@ -17,6 +17,13 @@ export function unitWorldCenter(b: Building, u: { floor_number: number; facade: 
 
 export const towerTop = (b: Building) => floorBaseY(b, b.last_res_floor + 1);
 
+/** Camera 70 m out from the unit's facade, slightly above and to the side, looking at the unit. */
+export function unitViewGoal(b: Building, u: { floor_number: number; facade: Facade; bay_index: number }): { position: Vec3; target: Vec3 } {
+  const target = unitWorldCenter(b, u);
+  const out = new Vector3(0.35, 0.25, u.facade === 'front' ? 1 : -1).transformDirection(towerMatrix(b)).multiplyScalar(70);
+  return { position: target.clone().add(out).toArray(), target: target.toArray() };
+}
+
 export interface Bounds { minX: number; maxX: number; minZ: number; maxZ: number; podiumH: number; top: number; }
 
 /** Footprint of every tower (balconies included) after rotation, plus the podium margin. */

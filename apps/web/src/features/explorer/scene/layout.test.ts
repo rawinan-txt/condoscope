@@ -1,7 +1,7 @@
 import { buildingWidth, unitBox, type ExplorerPayload } from '@condoscope/shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getExplorer } from '../../../services/api';
-import { homeView, projectBounds, unitWorldCenter } from './layout';
+import { homeView, projectBounds, unitViewGoal, unitWorldCenter } from './layout';
 
 let ari: ExplorerPayload;
 let onNut: ExplorerPayload;
@@ -38,6 +38,19 @@ describe('scene layout', () => {
     expect(r.maxX).toBeGreaterThanOrEqual(b.origin_x_m + buildingWidth(b) / 2);
     expect(r.podiumH).toBeCloseTo(6 * 3.6);
     expect(r.top).toBeGreaterThan(r.podiumH + 31 * 3.2);
+  });
+
+  it('puts the camera outside the facade a unit is on, looking at it', () => {
+    const b = ari.buildings[0];
+    const front = ari.units.find((u) => u.building_id === b.id && u.facade === 'front' && u.floor_number === 20)!;
+    const back = ari.units.find((u) => u.building_id === b.id && u.facade === 'back' && u.floor_number === 20)!;
+    const f = unitViewGoal(b, front);
+    expect(f.position[2]).toBeGreaterThan(f.target[2] + 30);
+    expect(f.target).toEqual(unitWorldCenter(b, front).toArray());
+    expect(unitViewGoal(b, back).position[2]).toBeLessThan(unitWorldCenter(b, back).z - 30);
+    const turned = onNut.units.find((u) => u.facade === 'front')!;
+    const t = unitViewGoal(onNut.buildings[0], turned);
+    expect(t.position[0]).toBeLessThan(t.target[0] - 30); // 90° tower: front faces west
   });
 
   it('frames the whole project from the home camera', () => {
