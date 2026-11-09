@@ -1,6 +1,7 @@
 import type { RoomKey } from '@condoscope/shared';
 import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import { useState } from 'react';
+import AiBadge from '../../components/AiBadge';
 
 export interface ViewerItem { key: RoomKey; label: string; src: string | null }
 
@@ -15,7 +16,10 @@ export default function ImageViewer({ items, active, onPick }: { items: ViewerIt
     <figure className="overflow-hidden rounded-lg border border-slate-200">
       <div className="relative aspect-[4/3] bg-slate-100">
         {item.src && !broken[item.src] ? (
-          <img key={item.src} src={item.src} alt={item.label} className="fade-in h-full w-full object-cover" onError={() => setBroken((b) => ({ ...b, [item.src!]: true }))} />
+          <>
+            <img key={item.src} src={item.src} alt={item.label} className="fade-in h-full w-full object-cover" onError={() => setBroken((b) => ({ ...b, [item.src!]: true }))} />
+            <AiBadge />
+          </>
         ) : (
           <div key={item.key} className="fade-in flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500">
             <ImageOff className="size-8" aria-hidden />

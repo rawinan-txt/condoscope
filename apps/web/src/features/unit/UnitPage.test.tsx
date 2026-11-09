@@ -28,6 +28,13 @@ describe('UnitPage', () => {
     expect(within(screen.getByRole('figure')).getByText('ห้องนอน')).toBeInTheDocument();
   });
 
+  it('labels the interior image as AI-generated (spec section 5)', async () => {
+    at(`/unit/${a1805.id}`);
+    const figure = await screen.findByRole('figure');
+    expect(within(figure).getByRole('img')).toBeInTheDocument();
+    expect(within(figure).getByText('ภาพประกอบสร้างด้วย AI')).toBeInTheDocument();
+  });
+
   it('links back to the explorer with the unit kept selected', async () => {
     at(`/unit/${a1805.id}`);
     const back = await screen.findByRole('link', { name: 'กลับไปเลือกห้อง' });

@@ -94,7 +94,7 @@ export function generate(seed: number = SEED): Dataset {
     floorPlan(type, 1, 1).hotspots.forEach((h, i) => {
       d.unit_type_images.push({
         id: d.unit_type_images.length + 1, unit_type: type, room_key: h.key,
-        image_url: `images/units/${imageFile(type, h.key)}.webp`, caption: h.label, sort_order: i,
+        image_url: `images/interiors/${imageFile(type, h.key)}.webp`, caption: h.label, sort_order: i,
       });
     });
   }
