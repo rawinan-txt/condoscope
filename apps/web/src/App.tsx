@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import NotFound from './components/NotFound';
 import ExplorerPage from './features/explorer/ExplorerPage';
 import HomePage from './features/home/HomePage';
+import MapPage from './features/map/MapPage';
 import ProjectPage from './features/project/ProjectPage';
 import ReservationsPage from './features/reservations/ReservationsPage';
 import SearchPage from './features/search/SearchPage';
@@ -14,6 +15,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />
+        <Route path="map" element={<MapPage />} />
         <Route path="project/:projectId" element={<ProjectPage />} />
         <Route path="explorer/:projectId" element={<ExplorerPage />} />
         <Route path="unit/:unitId" element={<UnitPage />} />
