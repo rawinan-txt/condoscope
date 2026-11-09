@@ -6,7 +6,8 @@
     "dev": "wrangler dev",
     "test": "vitest run",
     "types": "wrangler types src/worker-configuration.d.ts --strict-vars false",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "db:migrate": "wrangler d1 migrations apply condoscope --local"
   },
   "dependencies": {
     "@condoscope/shared": "*",
