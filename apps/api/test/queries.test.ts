@@ -5,7 +5,7 @@ import {
 import { env } from 'cloudflare:workers';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
-  escapeLike, getBuildingFloors, getBuildingUnits, getExplorer, getProjectBuildings, getProjectDetail, getUnitDetail, getUnitFloorPlan,
+  getBuildingFloors, getBuildingUnits, getExplorer, getProjectBuildings, getProjectDetail, getUnitDetail, getUnitFloorPlan,
   getUnitImages, searchProjects,
 } from '../src/services/queries';
 import { countingDb, seedDb } from './helpers';
@@ -71,10 +71,12 @@ describe('missing ids', () => {
   });
 });
 
-describe('escapeLike', () => {
-  it('escapes backslash, percent and underscore', () => {
-    expect(escapeLike('50%_\\')).toBe('50\\%\\_\\\\');
-    expect(escapeLike('plain ไทย')).toBe('plain ไทย');
+describe('long Thai search text (regression: D1 rejects LIKE patterns over ~50 bytes)', () => {
+  it('a 40-character Thai query works and equals the fallback', async () => {
+    const p = { q: 'อารีย์'.repeat(7).slice(0, 40) };
+    expect(await searchProjects(env.DB, p)).toEqual(searchProjectsLocal(d, p));
+    const full = { q: 'กรุงเทพมหานคร' }; // 13 characters = 39 bytes of Thai, a real province name
+    expect(await searchProjects(env.DB, full)).toEqual(searchProjectsLocal(d, full));
   });
 });
 

@@ -7,6 +7,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Unwraps a lookup result or answers 404 for a well-formed id that does not exist. */
+export function found<T>(value: T | null, what: string): T {
+  if (value === null) throw new ApiError(404, 'NOT_FOUND', `${what} not found`);
+  return value;
+}
+
 const body = (code: ApiErrorCode, message: string): ApiErrorBody => ({ error: { code, message } });
 const NO_STORE = { 'Cache-Control': 'no-store' };
 

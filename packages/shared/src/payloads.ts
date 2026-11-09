@@ -8,8 +8,8 @@ import type {
 export const SEARCH_DEFAULTS = { sort: 'recommended', limit: 20, offset: 0 } as const;
 export const SEARCH_MAX_LIMIT = 50;
 
-// SQLite LIKE folds ASCII case only; do the same here so the fallback and the API agree on every input.
-const asciiLower = (s: string) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
+// SQLite lower() folds ASCII case only; do the same here so the fallback and the API agree on every input.
+export const asciiLower =(s: string) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
 
 function projectIdOfBuilding(d: Dataset): Map<number, number> {
   return new Map(d.buildings.map((b) => [b.id, b.project_id]));

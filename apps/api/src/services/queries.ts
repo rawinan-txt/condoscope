@@ -1,14 +1,11 @@
 import {
-  floorPlan, SEARCH_DEFAULTS, unitDepth,
+  asciiLower, floorPlan, SEARCH_DEFAULTS, unitDepth,
   type Amenity, type Building, type ExplorerPayload, type Floor, type ProjectDetailPayload, type ProjectPage, type ProjectSearchParams,
   type TypeAvailability, type UnitDetailPayload, type UnitFloorPlanPayload, type UnitStatus, type UnitTypeImage, type UnitView,
 } from '@condoscope/shared';
 import { buildingFromRow, projectFromRow } from './mappers';
 
 // Every value from a caller goes through bind(); the only text spliced into SQL is picked from fixed lists below.
-
-/** Escapes \ % _ so user text is matched literally by `LIKE ? ESCAPE '\'`. */
-export const escapeLike = (s: string): string => s.replace(/[\\%_]/g, '\\$&');
 
 type Bind = string | number;
 const first = <T>(r: D1Result<unknown>): T | undefined => (r.results as T[])[0];
@@ -26,10 +23,12 @@ function searchWhere(p: ProjectSearchParams): { where: string; binds: Bind[] } {
   const binds: Bind[] = [];
   const q = p.q?.trim();
   if (q) {
-    // shortcut: LIKE folds ASCII case only; fine for Thai + ASCII names, add a normalised search column if accented names appear
-    const like = `%${escapeLike(q)}%`;
-    conds.push("(p.name LIKE ? ESCAPE '\\' OR p.neighborhood LIKE ? ESCAPE '\\' OR p.district LIKE ? ESCAPE '\\' OR p.province LIKE ? ESCAPE '\\')");
-    binds.push(like, like, like, like);
+    // instr() instead of LIKE: D1 rejects LIKE patterns longer than ~50 bytes (a 17-character Thai query), and instr
+    // needs no escaping because % _ \ are plain characters. lower() folds ASCII only, like asciiLower on the fallback side.
+    // shortcut: ASCII-only case folding; fine for Thai + ASCII names, add a normalised search column if accented names appear
+    const needle = asciiLower(q);
+    conds.push('(instr(lower(p.name), ?) > 0 OR instr(lower(p.neighborhood), ?) > 0 OR instr(lower(p.district), ?) > 0 OR instr(lower(p.province), ?) > 0)');
+    binds.push(needle, needle, needle, needle);
   }
   if (p.province !== undefined) { conds.push('p.province = ?'); binds.push(p.province); }
   if (p.district !== undefined) { conds.push('p.district = ?'); binds.push(p.district); }
