@@ -2,9 +2,9 @@ import { sanitizeSearchParams, toQueryRecord, type Project } from '@condoscope/s
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { FIELD_CLASS, PRICE_STEPS } from '../search/options';
 
-const PRICE_STEPS = [2, 3, 4, 5, 7, 10, 15]; // million baht
-const field = 'mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm';
+const field = FIELD_CLASS;
 
 /** The search box is the main thing on the home page (spec 8.1). Submitting opens /search with the filters in the URL. */
 export default function Hero({ projects }: { projects: Project[] }) {
