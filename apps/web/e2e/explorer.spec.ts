@@ -58,10 +58,41 @@ test('ลากเพื่อหมุนแล้วปล่อยบนห�
   await expect(panelTitle(page)).toHaveCount(0);
 });
 
-test('แสดงแบนเนอร์ข้อมูลสำรองและป้ายข้อมูลจำลอง', async ({ page }) => {
+const MOCK_NOTICE = 'ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง';
+const BANNER = 'Demo Fallback Mode';
+
+test('API จริง: ไม่มีแบนเนอร์ fallback, เรียก API ครั้งเดียว และไม่โหลด fallback.json', async ({ page }) => {
+  const requested: string[] = [];
+  page.on('request', (r) => requested.push(r.url()));
   await page.goto('#/explorer/1');
-  await expect(page.getByText('Demo Fallback Mode')).toBeVisible();
-  await expect(page.getByText('ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง', { exact: false })).toBeVisible();
+  await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
+  await expect(page.getByText(BANNER)).toHaveCount(0);
+  await expect(page.getByText(MOCK_NOTICE, { exact: false })).toBeVisible();
+  expect(requested.filter((u) => /\/api\/projects\/1\/explorer$/.test(u))).toHaveLength(1);
+  expect(requested.some((u) => /fallback-[\w-]+\.js/.test(u))).toBe(false);
+});
+
+const DOWN: [string, (r: import('@playwright/test').Route) => Promise<void>][] = [
+  ['เครือข่ายล้ม', (r) => r.abort()],
+  ['HTTP 500', (r) => r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"code":"INTERNAL","message":"x"}}' })],
+  ['200 เป็นหน้า HTML', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>404</title>' })],
+];
+for (const [name, handler] of DOWN) {
+  test(`API ล่ม (${name}): แบนเนอร์ขึ้น และยังเลือกห้องจากตึกได้ตรงห้อง`, async ({ page }) => {
+    await page.route('**/api/**', handler);
+    await open3D(page, 1);
+    await expect(page.getByText(BANNER)).toBeVisible();
+    await expect(page.getByText(MOCK_NOTICE, { exact: false })).toBeVisible();
+    const [u] = await visibleUnits(page, 1, 1);
+    await page.mouse.click(u.x, u.y);
+    await expect(panelTitle(page)).toHaveText(`ห้อง ${u.unit_number}`);
+  });
+}
+
+test('ห้องที่ไม่มีอยู่ (API จริง): "ไม่พบข้อมูล" ไม่ใช่ fallback', async ({ page }) => {
+  await page.goto('#/unit/999999');
+  await expect(page.getByRole('heading', { name: 'ไม่พบข้อมูล' })).toBeVisible();
+  await expect(page.getByText(BANNER)).toHaveCount(0);
 });
 
 test('ภาพหน้าจอสำหรับ README', async ({ page }) => {
