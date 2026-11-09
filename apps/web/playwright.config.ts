@@ -1,8 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
 // Software WebGL so the 3D tests run on machines and CI runners without a GPU.
-// shortcut: Playwright on Windows can leave the preview server running; E2E_PORT lets a rerun pick a free port
+// shortcut: Playwright on Windows can leave its servers running; E2E_PORT / E2E_API_PORT let a rerun pick free ports
 const PORT = Number(process.env.E2E_PORT ?? 4321);
+const API_PORT = Number(process.env.E2E_API_PORT ?? 8788);
 const SOFT_GL = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 
 export default defineConfig({
@@ -16,11 +17,23 @@ export default defineConfig({
     { name: 'chromium', grepInvert: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: SOFT_GL } } },
     { name: 'chromium-nogl', grep: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: ['--disable-webgl', '--disable-webgl2', '--disable-gpu'] } } },
   ],
-  webServer: {
-    // one node process (no npm wrapper) so Playwright can stop it cleanly on Windows; e2e script builds first
-    command: `node ../../node_modules/vite/bin/vite.js preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}/condoscope/`,
-    reuseExistingServer: false,
-    timeout: 180_000,
-  },
+  // Both servers are started as one plain node process (no npm wrapper) so Playwright can stop them on Windows.
+  // `npm run e2e` (scripts/e2e.mjs) prepares the database and builds the web app first.
+  webServer: [
+    {
+      command: `node ../../node_modules/vite/bin/vite.js preview --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}/condoscope/`,
+      reuseExistingServer: false,
+      timeout: 180_000,
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
+    },
+    {
+      command: `node ../../node_modules/wrangler/bin/wrangler.js dev --port ${API_PORT} --persist-to .wrangler/e2e-${API_PORT}`,
+      cwd: '../api',
+      url: `http://localhost:${API_PORT}/api/health`,
+      reuseExistingServer: false,
+      timeout: 180_000,
+      gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
+    },
+  ],
 });

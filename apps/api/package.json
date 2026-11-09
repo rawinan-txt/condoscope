@@ -1,0 +1,23 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8788",
+    "test": "vitest run",
+    "types": "wrangler types src/worker-configuration.d.ts --strict-vars false",
+    "typecheck": "tsc -p .",
+    "db:migrate": "wrangler d1 migrations apply condoscope --local",
+    "db:seed": "wrangler d1 execute condoscope --local --file ../../database/seeds/seed.sql",
+    "db:reset": "node scripts/db.mjs reset"
+  },
+  "dependencies": {
+    "@condoscope/shared": "*",
+    "hono": "^4.13.17",
+    "zod": "^4.6.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.6.0",
+    "wrangler": "^4.158.0"
+  }
+}

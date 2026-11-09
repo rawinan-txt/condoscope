@@ -2,7 +2,7 @@ import type { Project } from '@condoscope/shared';
 import { formatMillion } from '@condoscope/shared';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { listProjects } from '../services/api';
+import { searchProjects } from '../services/api';
 import { useReportSource } from './Layout';
 
 // shortcut: temporary project list, replaced by the real Home/Search page in Plan 3
@@ -10,7 +10,9 @@ export default function TempHome() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const report = useReportSource();
   useEffect(() => {
-    listProjects().then((r) => { setProjects(r.data); report(r.source); });
+    let current = true; // a late answer after the user left must not flip the banner of the next page
+    searchProjects().then((r) => { if (current) { setProjects(r.data.items); report(r.source); } });
+    return () => { current = false; };
   }, [report]);
 
   return (

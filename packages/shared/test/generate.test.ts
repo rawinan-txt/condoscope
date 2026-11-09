@@ -49,6 +49,12 @@ describe('generate', () => {
     expect(new Set(a.units.map((u) => u.direction.split(' ')[0])).size).toBeGreaterThanOrEqual(4);
   });
 
+  it('gives every project a distinct launch date in the past', () => {
+    const dates = a.projects.map((p) => p.created_at);
+    expect(new Set(dates).size).toBe(5);
+    for (const t of dates) { expect(t).toMatch(/^\d{4}-\d{2}-\d{2}T00:00:00Z$/); expect(t < '2026-11-09').toBe(true); }
+  });
+
   it('derives project totals from units', () => {
     for (const p of a.projects) {
       const us = unitsOf(a, p);

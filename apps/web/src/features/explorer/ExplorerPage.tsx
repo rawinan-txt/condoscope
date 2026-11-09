@@ -1,5 +1,5 @@
 import type { ExplorerPayload } from '@condoscope/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { useReportSource } from '../../components/Layout';
 import NotFound, { LoadError } from '../../components/NotFound';
@@ -19,13 +19,17 @@ export default function ExplorerPage() {
   const report = useReportSource();
   const [load, setLoad] = useState<Load>({ state: 'loading' });
 
+  const latest = useRef(0);
+
   const fetchData = useCallback(() => {
+    const mine = ++latest.current;
     setLoad({ state: 'loading' });
     getExplorer(Number(projectId))
-      .then((r) => { setLoad({ state: 'ok', data: r.data }); report(r.source); })
-      .catch((e) => setLoad({ state: e instanceof NotFoundError ? 'missing' : 'error' }));
+      .then((r) => { if (mine === latest.current) { setLoad({ state: 'ok', data: r.data }); report(r.source); } })
+      .catch((e) => { if (mine === latest.current) setLoad({ state: e instanceof NotFoundError ? 'missing' : 'error' }); });
   }, [projectId, report]);
-  useEffect(fetchData, [fetchData]);
+  // leaving the page (or opening another project) retires its pending request: a late answer must not replace newer content or banner
+  useEffect(() => { fetchData(); return () => { latest.current++; }; }, [fetchData]);
 
   if (load.state === 'loading') return <div className="mx-auto max-w-7xl animate-pulse px-4 py-8"><div className="h-[60vh] rounded-lg bg-slate-100" /></div>;
   if (load.state === 'missing') return <NotFound message="ไม่พบโครงการนี้" />;
