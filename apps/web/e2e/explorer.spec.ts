@@ -1,31 +1,6 @@
-import { mulberry32, type Dataset } from '@condoscope/shared';
-import { expect, test, type Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
+import { expect, test } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
-
-const data: Dataset = JSON.parse(readFileSync(fileURLToPath(new URL('../src/data/fallback.json', import.meta.url)), 'utf8'));
-const panelTitle = (page: Page) => page.locator('section[aria-label="รายละเอียดห้อง"] h2');
-
-async function open3D(page: Page, projectId: number) {
-  await page.goto(`#/explorer/${projectId}`);
-  await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
-  await page.waitForTimeout(1500); // first frames + shadow maps
-}
-
-/** Up to n units of the project that are visible from the current camera, in a fixed pseudo-random order. */
-async function visibleUnits(page: Page, projectId: number, n: number) {
-  const buildingIds = new Set(data.buildings.filter((b) => b.project_id === projectId).map((b) => b.id));
-  const units = data.units.filter((u) => buildingIds.has(u.building_id));
-  const rng = mulberry32(projectId);
-  const order = units.map((u) => ({ u, k: rng() })).sort((a, b) => a.k - b.k).map((x) => x.u);
-  const found: { id: number; unit_number: string; x: number; y: number }[] = [];
-  for (const u of order) {
-    const p = await page.evaluate((id) => window.__condoscope!.projectUnit(id), u.id);
-    if (p) found.push({ id: u.id, unit_number: u.unit_number, ...p });
-    if (found.length === n) break;
-  }
-  return found;
-}
+import { data, open3D, panelTitle, visibleUnits } from './helpers';
 
 for (const project of data.projects) {
   test(`เลือกห้องจากตึก 3D ได้ตรงห้อง — ${project.name}`, async ({ page }) => {
