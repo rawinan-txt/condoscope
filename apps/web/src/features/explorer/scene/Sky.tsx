@@ -1,4 +1,6 @@
+import { useLayoutEffect } from 'react';
 import { BackSide, Color, ShaderMaterial, Vector3 } from 'three';
+import { LOOK, type TimeOfDay } from './time';
 
 /** Dusk gradient with a warm glow around the sun direction. */
 export const skyMaterial = new ShaderMaterial({
@@ -25,7 +27,12 @@ export const skyMaterial = new ShaderMaterial({
     }`,
 });
 
-export default function Sky({ radius = 2400 }: { radius?: number }) {
+export default function Sky({ radius = 2400, time }: { radius?: number; time: TimeOfDay }) {
+  useLayoutEffect(() => {
+    const s = LOOK[time].sky;
+    const u = skyMaterial.uniforms;
+    u.top.value.copy(s.top); u.mid.value.copy(s.mid); u.horizon.value.copy(s.horizon); u.glow.value.copy(s.glow);
+  }, [time]);
   return (
     <mesh material={skyMaterial}>
       <sphereGeometry args={[radius, 32, 16]} />

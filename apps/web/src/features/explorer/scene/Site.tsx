@@ -31,11 +31,6 @@ export default function Site({ r, seed }: { r: Bounds; seed: number }) {
   const trees = useMemo(() => {
     const rng = mulberry32(seed);
     const list: Matrix4[] = [];
-    // roof garden along the south edge (towers sit behind it)
-    for (let i = 0; i < Math.round(w / 1.6); i++) {
-      const s = 0.8 + rng() * 0.8;
-      list.push(mat(r.minX + 2 + rng() * (w - 4), H + 0.3 + 1.6 * s + 1.2, r.maxZ - 1.5 - rng() * 3, s, s * 1.15, s));
-    }
     // street trees around the plaza
     for (let x = r.minX - 10; x <= r.maxX + 10; x += 6) list.push(mat(x, 0.2 + 3, r.maxZ + 13 + rng() * 2, 1.3, 1.5, 1.3));
     for (let z = r.minZ - 6; z <= r.maxZ + 8; z += 6) {

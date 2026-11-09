@@ -1,14 +1,16 @@
 import { floorBaseY, type Building, type UnitView } from '@condoscope/shared';
-import { Environment, OrbitControls } from '@react-three/drei';
-import { Bloom, EffectComposer } from '@react-three/postprocessing';
+import { Environment, OrbitControls, PerformanceMonitor } from '@react-three/drei';
+import { Bloom, EffectComposer, SSAO } from '@react-three/postprocessing';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import City from './scene/City';
 import { homeView, projectBounds, towerMatrix, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
+import { LOOK, uNight, type TimeOfDay } from './scene/time';
 import Towers from './scene/Towers';
 import UnitTooltip from './UnitTooltip';
 import type { CutFloor, ExplorerApi } from './useExplorer';
@@ -23,6 +25,9 @@ export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUna
   const wrap = useRef<HTMLDivElement>(null);
   const [tipAt, setTipAt] = useState<{ left: number; top: number } | null>(null);
   const coarse = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
+  const [low, setLow] = useState(coarse); // phones start in low quality; desktops drop to it when FPS stays < 40
+  const [time, setTime] = useState<TimeOfDay>('dusk');
+  useEffect(() => { uNight.value = time === 'dusk' ? 1 : 0; }, [time]);
   const hovered = x.unit(x.hoveredId);
 
   const onHover = (u: UnitView | null, e?: ThreeEvent<PointerEvent>) => {
@@ -34,38 +39,54 @@ export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUna
   useEffect(() => () => { document.body.style.cursor = ''; }, []);
 
   return (
-    <div ref={wrap} className="relative h-full w-full overflow-hidden rounded-lg bg-[#16223d]">
+    <div ref={wrap} className="relative h-full w-full overflow-hidden rounded-lg" style={{ background: LOOK[time].bg }}>
       <Canvas
-        shadows
-        dpr={[1, coarse ? 1.5 : 2]}
+        shadows="percentage"
+        dpr={[1, low ? 1.25 : 2]}
         camera={{ fov: 38, near: 1, far: 5000, position: home.position }}
         gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onUnavailable(); })}
         onPointerMissed={() => x.hover(null)}
         aria-label="ตึก 3 มิติ ลากเพื่อหมุน เลื่อนล้อเพื่อซูม"
       >
-        <Scene x={x} bounds={bounds} home={home} onHover={onHover} />
+        <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => setLow(true)} />
       </Canvas>
+      <div className="absolute right-2 top-2 flex rounded-md bg-white/90 p-0.5 text-sm shadow" role="group" aria-label="ช่วงเวลา">
+        {(['dusk', 'day'] as const).map((t) => (
+          <button key={t} type="button" aria-pressed={time === t} onClick={() => setTime(t)} className={`rounded px-2.5 py-1 ${time === t ? 'bg-accent text-white' : 'hover:bg-slate-100'}`}>
+            {t === 'dusk' ? 'พลบค่ำ' : 'กลางวัน'}
+          </button>
+        ))}
+      </div>
       {hovered && tipAt && <UnitTooltip unit={hovered} mine={x.mine} left={tipAt.left} top={tipAt.top} />}
     </div>
   );
 }
 
-function Scene({ x, bounds, home, onHover }: { x: ExplorerApi; bounds: Bounds; home: { position: Vec3; target: Vec3 }; onHover: (u: UnitView | null, e?: ThreeEvent<PointerEvent>) => void }) {
+interface SceneProps {
+  x: ExplorerApi; bounds: Bounds; home: { position: Vec3; target: Vec3 };
+  onHover: (u: UnitView | null, e?: ThreeEvent<PointerEvent>) => void;
+  time: TimeOfDay; low: boolean; onSlow(): void;
+}
+
+function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
   const unitsRef = useRef<InstancedMesh>(null);
   const seed = x.buildings[0].project_id * 7919;
+  const look = LOOK[time];
   return (
     <>
-      <fog attach="fog" args={['#4b4766', 350, 1500]} />
-      <Sky />
-      <Environment resolution={128}><Sky radius={400} /></Environment>
-      <hemisphereLight args={['#9fb3d9', '#202020', 0.55]} />
+      <PerformanceMonitor ms={250} iterations={8} bounds={() => [40, 1000]} onDecline={onSlow} />
+      <fog attach="fog" args={[look.fog, time === 'day' ? 600 : 350, time === 'day' ? 2600 : 1500]} />
+      <Sky time={time} />
+      <Environment files={import.meta.env.BASE_URL + look.env} environmentIntensity={look.envIntensity} />
+      <hemisphereLight args={look.hemi} />
       <directionalLight
+        key={low ? 'low' : 'high'}
         castShadow
-        position={[-220, 160, -260]}
-        intensity={1.1}
-        color="#ffc999"
-        shadow-mapSize={[2048, 2048]}
+        position={look.sun.position}
+        intensity={look.sun.intensity}
+        color={look.sun.color}
+        shadow-mapSize={low ? [1024, 1024] : [2048, 2048]}
         shadow-camera-left={-120}
         shadow-camera-right={120}
         shadow-camera-top={120}
@@ -73,15 +94,24 @@ function Scene({ x, bounds, home, onHover }: { x: ExplorerApi; bounds: Bounds; h
         shadow-camera-far={800}
         shadow-bias={-0.0004}
         shadow-normalBias={0.04}
+        shadow-radius={3}
       />
       <Site r={bounds} seed={seed} />
-      <City r={bounds} seed={seed} />
+      <Landscape r={bounds} seed={seed} time={time} />
+      <City r={bounds} seed={seed} time={time} />
       <Towers x={x} unitsRef={unitsRef} onHover={onHover} onPick={(u) => x.select(u.id)} />
       <CameraRig x={x} home={home} bounds={bounds} />
       <Probe x={x} unitsRef={unitsRef} />
-      <EffectComposer multisampling={4}>
-        <Bloom intensity={0.7} luminanceThreshold={0.85} luminanceSmoothing={0.3} mipmapBlur />
-      </EffectComposer>
+      {low ? (
+        <EffectComposer key="low" multisampling={0}>
+          <Bloom intensity={time === 'dusk' ? 0.7 : 0.25} luminanceThreshold={0.85} luminanceSmoothing={0.3} mipmapBlur />
+        </EffectComposer>
+      ) : (
+        <EffectComposer key="high" multisampling={4} enableNormalPass>
+          <SSAO samples={16} radius={0.12} intensity={18} luminanceInfluence={0.6} worldDistanceThreshold={60} worldDistanceFalloff={20} worldProximityThreshold={1} worldProximityFalloff={0.5} />
+          <Bloom intensity={time === 'dusk' ? 0.7 : 0.25} luminanceThreshold={0.85} luminanceSmoothing={0.3} mipmapBlur />
+        </EffectComposer>
+      )}
     </>
   );
 }

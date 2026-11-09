@@ -6,6 +6,7 @@ import {
   Quaternion, RepeatWrapping, SphereGeometry, SRGBColorSpace, Vector3,
 } from 'three';
 import type { Bounds } from './layout';
+import { uNight, type TimeOfDay } from './time';
 
 const BOX = new BoxGeometry(1, 1, 1);
 const Q = new Quaternion();
@@ -14,11 +15,12 @@ const mat = (x: number, y: number, z: number, sx: number, sy: number, sz: number
 const cityMat = new MeshStandardMaterial({ color: 0x6f757d, roughness: 0.85 });
 // window grid on every wall, some windows lit (own shader patch)
 cityMat.onBeforeCompile = (s) => {
+  s.uniforms.uNight = uNight;
   s.vertexShader = s.vertexShader
     .replace('#include <common>', '#include <common>\nvarying vec3 vCityP;\nvarying vec3 vCityN;')
     .replace('#include <begin_vertex>', '#include <begin_vertex>\nmat4 cityM = modelMatrix * instanceMatrix; vCityP = (cityM * vec4(transformed, 1.0)).xyz; vCityN = normalize(mat3(cityM) * normal);');
   s.fragmentShader = s.fragmentShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vCityP;\nvarying vec3 vCityN;\nfloat cityWin; float cityRnd;')
+    .replace('#include <common>', '#include <common>\nuniform float uNight;\nvarying vec3 vCityP;\nvarying vec3 vCityN;\nfloat cityWin; float cityRnd;')
     .replace('#include <color_fragment>', `#include <color_fragment>
       float wall = 1.0 - step(0.5, abs(vCityN.y));
       float along = abs(vCityN.x) > 0.5 ? vCityP.z : vCityP.x;
@@ -27,11 +29,12 @@ cityMat.onBeforeCompile = (s) => {
       cityRnd = fract(sin(dot(cell + floor(vCityP.xz / 40.0), vec2(12.9898, 78.233))) * 43758.5453);
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.3, cityWin);`)
     .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-      totalEmissiveRadiance += mix(vec3(1.0, 0.68, 0.38), vec3(0.8, 0.88, 1.0), step(0.86, cityRnd)) * step(0.6, cityRnd) * cityWin * 0.22;`);
+      totalEmissiveRadiance += mix(vec3(1.0, 0.68, 0.38), vec3(0.8, 0.88, 1.0), step(0.86, cityRnd)) * step(0.6, cityRnd) * cityWin * 0.22 * (0.1 + 0.9 * uNight);`);
 };
 const roadMat = new MeshStandardMaterial({ color: 0x1c1f23, roughness: 0.95 });
 const exMat = new MeshStandardMaterial({ color: 0x8d8f92, roughness: 0.85 });
-const lampMat = new MeshBasicMaterial({ color: new Color(4, 2.5, 1.1) });
+const lampDusk = new MeshBasicMaterial({ color: new Color(4, 2.5, 1.1) });
+const lampDay = new MeshBasicMaterial({ color: new Color(0.55, 0.55, 0.5) });
 const LAMP = new SphereGeometry(0.45, 8, 6);
 
 function streakTexture(rng: () => number, a: string, b: string) {
@@ -50,7 +53,7 @@ function streakTexture(rng: () => number, a: string, b: string) {
 }
 
 /** Surrounding city, roads with moving car lights and an elevated expressway, laid out around the project bounds. */
-export default function City({ r, seed }: { r: Bounds; seed: number }) {
+export default function City({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
   const cx = (r.minX + r.maxX) / 2;
   const roadZ = r.maxZ + 22;
   const roadX = r.maxX + 24;
@@ -91,7 +94,9 @@ export default function City({ r, seed }: { r: Bounds; seed: number }) {
   }, [seed, cx, r, roadZ, roadX, exX]);
 
   const strip = useMemo(() => new PlaneGeometry(5, 3000).rotateX(-Math.PI / 2), []);
-  useFrame((_, dt) => { for (const s of streaks) s.mat.map!.offset.y += s.speed * dt * 10; });
+  useFrame((_, dt) => {
+    for (const s of streaks) { s.mat.map!.offset.y += s.speed * dt * 10; s.mat.opacity = 0.3 + 0.7 * uNight.value; }
+  });
 
   const fill = (list: Matrix4[]) => (m: import('three').InstancedMesh | null) => {
     if (!m) return;
@@ -107,7 +112,7 @@ export default function City({ r, seed }: { r: Bounds; seed: number }) {
       <mesh geometry={BOX} material={roadMat} position={[roadX, 0.11, 0]} scale={[16, 0.22, 3000]} receiveShadow />
       <mesh geometry={BOX} material={exMat} position={[exX, exY, 0]} scale={[28, 1.6, 3000]} castShadow receiveShadow />
       <instancedMesh args={[BOX, exMat, 100]} ref={fill(Array.from({ length: 100 }, (_, i) => mat(exX, exY / 2, -1500 + i * 30, 3, exY, 3)))} />
-      <instancedMesh args={[LAMP, lampMat, lamps.length]} ref={fill(lamps)} />
+      <instancedMesh args={[LAMP, time === 'dusk' ? lampDusk : lampDay, lamps.length]} ref={fill(lamps)} />
       {streaks.map((s, i) => (
         <mesh key={i} geometry={strip} material={s.mat} position={[s.x, s.y, s.z]} rotation={[0, s.alongZ ? 0 : Math.PI / 2, 0]} />
       ))}

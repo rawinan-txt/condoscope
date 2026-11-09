@@ -17,7 +17,7 @@ export const LOOK: Record<TimeOfDay, {
   },
   day: {
     sky: { top: new Color('#3d7fd6'), mid: new Color('#8fbbe8'), horizon: new Color('#dfeaf3'), glow: new Color('#fff6e0') },
-    fog: '#c9d8e6', hemi: ['#ffffff', '#606060', 0.8], sun: { color: '#fff4e5', intensity: 2.4, position: [180, 260, 140] },
-    env: 'hdri/day.hdr', envIntensity: 0.9, bg: '#8fbbe8',
+    fog: '#c9d8e6', hemi: ['#dfe9f5', '#4a4a4a', 0.35], sun: { color: '#fff4e5', intensity: 1.3, position: [180, 260, 140] },
+    env: 'hdri/day.hdr', envIntensity: 0.45, bg: '#8fbbe8',
   },
 };
