@@ -2,6 +2,7 @@ import type { Facade } from '@condoscope/shared';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import BuildingSvg from './BuildingSvg';
+import ThreeBoundary from './ThreeBoundary';
 import type { Direction, ExplorerApi } from './useExplorer';
 
 const Building3D = lazy(() => import('./Building3D'));
@@ -66,9 +67,11 @@ export default function BuildingView({ x }: { x: ExplorerApi }) {
         aria-label="เลือกห้องจากตึก ใช้ลูกศรเลื่อนไปห้องข้างๆ หรือชั้นบนล่าง Enter เปิดรายละเอียด Esc ยกเลิก"
       >
         {mode === '3d' ? (
-          <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500">กำลังโหลดตึก 3D…</div>}>
-            <Building3D x={x} onUnavailable={lost} />
-          </Suspense>
+          <ThreeBoundary onError={lost} fallback={<BuildingSvg x={x} building={building} facade={facade} />}>
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500">กำลังโหลดตึก 3D…</div>}>
+              <Building3D x={x} onUnavailable={lost} />
+            </Suspense>
+          </ThreeBoundary>
         ) : (
           <BuildingSvg x={x} building={building} facade={facade} />
         )}

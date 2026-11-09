@@ -47,7 +47,8 @@ export function useExplorer(payload: ExplorerPayload) {
     const cur = selectedId === null ? undefined : byId.get(selectedId);
     if (!cur) { select(units[0]?.id ?? null); return; }
     const df = dir === 'up' ? 1 : dir === 'down' ? -1 : 0;
-    const db = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+    // the back facade is seen from behind, so its bays run right-to-left on screen
+    const db = (dir === 'right' ? 1 : dir === 'left' ? -1 : 0) * (cur.facade === 'back' ? -1 : 1);
     const next = bySlot.get(slotKey(cur.building_id, cur.floor_number + df, cur.facade, cur.bay_index + db));
     if (next && isVisible(next)) select(next.id);
   }, [selectedId, byId, bySlot, units, isVisible]);

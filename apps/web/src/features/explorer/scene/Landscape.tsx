@@ -1,5 +1,5 @@
 import { mulberry32 } from '@condoscope/shared';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   BoxGeometry, Color, ConeGeometry, CylinderGeometry, IcosahedronGeometry, InstancedMesh, Matrix4, MeshBasicMaterial,
   MeshStandardMaterial, Quaternion, SphereGeometry, Vector3,
@@ -38,7 +38,7 @@ function fill(list: Matrix4[]) {
 }
 
 /** Roof garden on the podium: three tree shapes with uplights, and loungers + umbrellas beside the pool. */
-export default function Landscape({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
+export default memo(function Landscape({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
   const H = r.podiumH;
   const cx = (r.minX + r.maxX) / 2;
   const w = r.maxX - r.minX;
@@ -85,4 +85,4 @@ export default function Landscape({ r, seed, time }: { r: Bounds; seed: number; 
       <instancedMesh args={[SHADE, shade, t.shades.length]} ref={fill(t.shades)} castShadow />
     </group>
   );
-}
+});

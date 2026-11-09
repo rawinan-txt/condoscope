@@ -2,7 +2,7 @@ import { floorBaseY, type Building, type UnitView } from '@condoscope/shared';
 import { Environment, OrbitControls, PerformanceMonitor } from '@react-three/drei';
 import { Bloom, EffectComposer, SSAO } from '@react-three/postprocessing';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3 } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import City from './scene/City';
@@ -78,7 +78,10 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
       <PerformanceMonitor ms={250} iterations={8} bounds={() => [40, 1000]} onDecline={onSlow} />
       <fog attach="fog" args={[look.fog, time === 'day' ? 600 : 350, time === 'day' ? 2600 : 1500]} />
       <Sky time={time} />
-      <Environment files={import.meta.env.BASE_URL + look.env} environmentIntensity={look.envIntensity} />
+      {/* own Suspense: the scene draws right away and the HDRI lighting joins when loaded */}
+      <Suspense fallback={null}>
+        <Environment files={import.meta.env.BASE_URL + look.env} environmentIntensity={look.envIntensity} />
+      </Suspense>
       <hemisphereLight args={look.hemi} />
       <directionalLight
         key={low ? 'low' : 'high'}

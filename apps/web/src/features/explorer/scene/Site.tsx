@@ -1,5 +1,5 @@
 import { mulberry32 } from '@condoscope/shared';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { BoxGeometry, IcosahedronGeometry, Matrix4, MeshBasicMaterial, MeshStandardMaterial, Color, Quaternion, Vector3 } from 'three';
 import type { Bounds } from './layout';
 
@@ -20,7 +20,7 @@ const plazaMat = new MeshStandardMaterial({ color: 0x9c978d, roughness: 0.9 });
 const TREE = new IcosahedronGeometry(1.8, 1);
 
 /** Podium with roof garden + pool, plaza, ground and trees, sized from the project bounds. */
-export default function Site({ r, seed }: { r: Bounds; seed: number }) {
+export default memo(function Site({ r, seed }: { r: Bounds; seed: number }) {
   const cx = (r.minX + r.maxX) / 2;
   const cz = (r.minZ + r.maxZ) / 2;
   const w = r.maxX - r.minX;
@@ -64,4 +64,4 @@ export default function Site({ r, seed }: { r: Bounds; seed: number }) {
       />
     </group>
   );
-}
+});

@@ -26,6 +26,13 @@ describe('useExplorer', () => {
     expect(result.current.selectedId).toBe(a.id);
   });
 
+  it('mirrors left/right on the back facade, which is seen from behind', () => {
+    const { result } = setup();
+    act(() => result.current.select(unitAt(1, 18, 'back', 2).id));
+    act(() => result.current.move('right'));
+    expect(result.current.selectedId).toBe(unitAt(1, 18, 'back', 1).id);
+  });
+
   it('does not jump to the other tower at the edge', () => {
     const { result } = setup();
     const last = unitAt(1, 10, 'front', 5);

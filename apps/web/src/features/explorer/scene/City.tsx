@@ -1,6 +1,6 @@
 import { mulberry32 } from '@condoscope/shared';
 import { useFrame } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   AdditiveBlending, BoxGeometry, CanvasTexture, Color, Matrix4, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry,
   Quaternion, RepeatWrapping, SphereGeometry, SRGBColorSpace, Vector3,
@@ -53,7 +53,7 @@ function streakTexture(rng: () => number, a: string, b: string) {
 }
 
 /** Surrounding city, roads with moving car lights and an elevated expressway, laid out around the project bounds. */
-export default function City({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
+export default memo(function City({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
   const cx = (r.minX + r.maxX) / 2;
   const roadZ = r.maxZ + 22;
   const roadX = r.maxX + 24;
@@ -118,4 +118,4 @@ export default function City({ r, seed, time }: { r: Bounds; seed: number; time:
       ))}
     </group>
   );
-}
+});
