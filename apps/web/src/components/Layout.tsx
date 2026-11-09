@@ -1,7 +1,9 @@
-import { Building2, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
-import { Link, Outlet } from 'react-router';
+import { Outlet } from 'react-router';
 import type { Source } from '../services/api';
+import Footer from './Footer';
+import Navbar from './Navbar';
 
 const DataSourceContext = createContext<(s: Source | null) => void>(() => {});
 /** Pages call this with the source of the data they show, so the banner never hides fallback data. */
@@ -12,15 +14,7 @@ export default function Layout() {
   return (
     <DataSourceContext.Provider value={setSource}>
       <div className="flex min-h-full flex-col">
-        <header className="border-b border-slate-200">
-          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-            <Link to="/" className="flex items-center gap-2 font-semibold">
-              <Building2 className="size-5 text-accent" aria-hidden />
-              CondoScope
-            </Link>
-            <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs text-amber-900">ข้อมูลจำลอง</span>
-          </div>
-        </header>
+        <Navbar />
         {source === 'fallback' && (
           <div role="status" className="border-b border-amber-200 bg-amber-50">
             <p className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2 text-sm text-amber-900">
@@ -32,9 +26,7 @@ export default function Layout() {
         <main className="flex-1">
           <Outlet />
         </main>
-        <footer className="border-t border-slate-200 px-4 py-3 text-center text-xs text-slate-500">
-          ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง · ชื่อโครงการทั้งหมดเป็นชื่อสมมติ
-        </footer>
+        <Footer />
       </div>
     </DataSourceContext.Provider>
   );
