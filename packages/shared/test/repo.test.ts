@@ -60,6 +60,20 @@ describe('github workflows', () => {
     expect(text).toMatch(/inputs\.confirm\s*==\s*'SEED'/);
   });
 
+  it('seed-db and deploy-api share one concurrency group so remote D1 jobs never overlap or double up', () => {
+    const seed = load('seed-db.yml').doc.concurrency;
+    const deploy = load('deploy-api.yml').doc.concurrency;
+    expect(seed.group).toBe('d1-remote');
+    expect(deploy.group).toBe('d1-remote');
+    expect(seed['cancel-in-progress']).toBe(false);
+    expect(deploy['cancel-in-progress']).toBe(false);
+  });
+
+  it('.gitignore keeps env files (where a token could be put) out of git but keeps .env.example', () => {
+    const ignore = readFileSync(fileURLToPath(new URL('../../../.gitignore', import.meta.url)), 'utf8').split(/\r?\n/);
+    for (const line of ['.env', '.env.*', '!.env.example', '*.local', '.dev.vars']) expect(ignore, line).toContain(line);
+  });
+
   it('ci runs e2e only on main pushes or by hand', () => {
     const { doc } = load('ci.yml');
     expect(doc.jobs.e2e.if).toMatch(/refs\/heads\/main/);

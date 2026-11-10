@@ -124,7 +124,7 @@ erDiagram
 | `ci.yml` | ทุก push / PR | typecheck, test, build, ตรวจ bundle; งาน e2e (Playwright) เฉพาะ push เข้า `main` | `contents: read` |
 | `deploy-api.yml` | push เข้า `main` ที่แตะ `apps/api`, `database`, `packages/shared` | `d1 migrations apply --remote` แล้ว `wrangler deploy` | `contents: read` + secrets Cloudflare |
 | `deploy-web.yml` | push เข้า `main` | build (ใช้ variable `VITE_API_URL`) แล้วขึ้น GitHub Pages | `pages: write`, `id-token: write` เฉพาะ job deploy |
-| `seed-db.yml` | กดเองเท่านั้น และต้องพิมพ์ `SEED` | ใส่ข้อมูลจำลองลงฐานข้อมูลจริง (เขียน ~12,000 แถว) | `contents: read` |
+| `seed-db.yml` | กดเองเท่านั้น และต้องพิมพ์ `SEED` | ใส่ข้อมูลจำลองลงฐานข้อมูลจริง (เขียน ~12,000 แถว; seed ซ้ำอาจ ~2 เท่า) ใช้ lock `d1-remote` ร่วมกับ deploy-api | `contents: read` |
 
 ค่าที่ต้องตั้งใน GitHub repo: secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` · variable `VITE_API_URL` (ที่อยู่ `*.workers.dev`, ไม่ใช่ความลับ) · Pages source = GitHub Actions · `database_id` ใน `apps/api/wrangler.jsonc` (ไม่ใช่ความลับ)
 
@@ -149,5 +149,5 @@ npm run gen           # สร้าง fallback.json และ seed.sql ให�
 - **D1 ฟรี:** อ่าน 5 ล้านแถว/วัน (นับแถวที่สแกน ไม่ใช่แถวที่คืน) · เขียน 100,000 แถว/วัน · 500 MB ต่อฐานข้อมูล · 50 query ต่อ request · 100 bound parameters ต่อ query
 - **Workers ฟรี:** 100,000 request/วัน · CPU 10 ms ต่อ request
 - การออกแบบ: SQL ชุดเดียวต่อ endpoint (`db.batch`, ไม่เกิน 4 statement ต่อ request มี test นับ), มี index ตามที่ query ใช้, `Cache-Control` ลดการอ่านซ้ำ, ไม่ parse ทีละแถวด้วย zod
-- **seed 1 รอบเขียนราว 12,000+ แถว (รวม index) อย่า seed ฐานข้อมูลจริงซ้ำหลายรอบ**
+- **seed รอบแรกเขียนราว 12,000+ แถว (รวม index) การ seed ซ้ำบนฐานข้อมูลที่มีข้อมูลแล้วอาจนับราว 2 เท่า (ผู้ตรวจประเมิน ยังไม่ยืนยันวิธีนับ DELETE ของ D1) อย่า seed ฐานข้อมูลจริงซ้ำหลายรอบ**
 - ต้องวัดตอน deploy จริง (วัดในเครื่องไม่ได้): CPU ต่อ request ของ `/api/projects/:id/explorer` (ในเครื่อง ~223 KB ก่อนบีบอัด ตอบ ~40 ms), `cf-cache-status` บน `*.workers.dev` (เอกสารไม่ยืนยันว่า Cache API ทำงานบนโดเมนนี้), จำนวนแถวที่อ่านต่อวัน

@@ -3,10 +3,12 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type SEED to run. One run writes about 12,000 rows; the D1 free limit is 100,000 writes per day.'
+        description: 'Type SEED to run. First run writes about 12,000 rows, a re-seed up to about twice that; the D1 free limit is 100,000 writes per day.'
         required: true
 permissions:
   contents: read
+# same lock as deploy-api.yml: a double click or a queued re-run must not seed twice or overlap a migration
+concurrency: { group: d1-remote, cancel-in-progress: false }
 jobs:
   seed:
     name: 'Seed REAL database (~12,000 row writes, free limit 100,000/day)'

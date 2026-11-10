@@ -60,11 +60,11 @@ npm run screenshots   # ถ่ายภาพหน้าจอใหม่ใ�
 
 เว็บขึ้น GitHub Pages ส่วน API และฐานข้อมูลอยู่บน Cloudflare (Workers + D1) ผ่าน GitHub Actions ต้องตั้งค่าใน repo ดังนี้
 
-1. Secrets: `CLOUDFLARE_API_TOKEN` (สิทธิ์แก้ Workers และ D1) และ `CLOUDFLARE_ACCOUNT_ID`
+1. Secrets: `CLOUDFLARE_API_TOKEN` (สิทธิ์ขั้นต่ำ: Account › Workers Scripts: Edit และ D1: Edit เฉพาะบัญชีนี้) และ `CLOUDFLARE_ACCOUNT_ID`
 2. สร้างฐานข้อมูล `wrangler d1 create condoscope` แล้วใส่ `database_id` ใน `apps/api/wrangler.jsonc`
-3. หลัง deploy API ครั้งแรก ตั้ง variable `VITE_API_URL` เป็นที่อยู่ `*.workers.dev`
+3. หลัง deploy API ครั้งแรก ตั้ง variable `VITE_API_URL` เป็นที่อยู่ `*.workers.dev` แล้วสั่งรัน workflow `Deploy web` ด้วยมือหนึ่งครั้ง (การตั้ง variable ไม่ทำให้ deploy ใหม่เอง เว็บจะยังเป็นโหมดข้อมูลสำรองจนกว่าจะ deploy ใหม่)
 4. เปิด GitHub Pages โดยเลือก source = GitHub Actions
-5. รัน workflow `seed-db` หนึ่งครั้ง (พิมพ์ `SEED`) เขียนราว 12,000 แถว ฟรีวันละ 100,000 แถว จึงไม่ควรรันซ้ำหลายรอบ
+5. รัน workflow `seed-db` หนึ่งครั้ง (พิมพ์ `SEED`) รอบแรกเขียนราว 12,000 แถว ส่วนการ seed ซ้ำบนฐานข้อมูลที่มีข้อมูลอยู่แล้วอาจนับราว 2 เท่า (ลบแล้วเขียนใหม่ ยังไม่ยืนยันวิธีนับของ D1) ฟรีวันละ 100,000 แถว จึงไม่ควร seed ซ้ำหลายรอบ และหลังแก้ `database/seeds/seed.sql` ต้อง seed ใหม่เองหนึ่งครั้ง (deploy-api ไม่ seed ให้)
 6. ตรวจด้วย `node scripts/smoke-live.mjs <URL ของ API>`
 
 ## ภาพหน้าจอ

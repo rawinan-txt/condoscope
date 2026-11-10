@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency: deploy-api
+# one lock for everything that writes to the remote D1 database (shared with seed-db.yml)
+concurrency: { group: d1-remote, cancel-in-progress: false }
 jobs:
   deploy:
     runs-on: ubuntu-latest

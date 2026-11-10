@@ -7,3 +7,9 @@ dist/
 .superpowers/
 test-results/
 playwright-report/
+
+# env files can hold tokens: never commit them (the example is the only exception)
+.env
+.env.*
+!.env.example
+*.local
