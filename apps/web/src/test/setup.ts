@@ -1,6 +1,10 @@
-import '@testing-library/jest-dom/vitest';
+import type {} from '@testing-library/jest-dom/vitest'; // types only
+import * as matchers from '@testing-library/jest-dom/matchers';
 import { cleanup, configure } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, expect, vi } from 'vitest';
+
+// extend this file's own expect: the packaged '@testing-library/jest-dom/vitest' ended up extending a different vitest copy
+expect.extend(matchers);
 
 afterEach(() => {
   cleanup();
