@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { fileURLToPath } from 'node:url';
 import { data, open3D, panelTitle, visibleUnits } from './helpers';
 
 for (const project of data.projects) {
@@ -68,15 +67,6 @@ test('ห้องที่ไม่มีอยู่ (API จริง): "ไ�
   await page.goto('#/unit/999999');
   await expect(page.getByRole('heading', { name: 'ไม่พบข้อมูล' })).toBeVisible();
   await expect(page.getByText(BANNER)).toHaveCount(0);
-});
-
-test('ภาพหน้าจอสำหรับ README', async ({ page }) => {
-  await open3D(page, 1);
-  const [u] = await visibleUnits(page, 1, 1);
-  await page.mouse.click(u.x, u.y);
-  await page.mouse.move(u.x, u.y);
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: fileURLToPath(new URL('../../../docs/screenshots/explorer.png', import.meta.url)) });
 });
 
 test('@nogl เครื่องไม่มี WebGL ใช้ภาพตึก SVG ได้', async ({ page }) => {
