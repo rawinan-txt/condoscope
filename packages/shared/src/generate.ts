@@ -40,7 +40,7 @@ export function generate(seed: number = SEED): Dataset {
       id: d.projects.length + 1, slug: spec.slug, name: spec.name, description: spec.description,
       province: spec.province, district: spec.district, neighborhood: spec.neighborhood,
       latitude: spec.latitude, longitude: spec.longitude, address_display: spec.address_display,
-      thumbnail_url: null, starting_price: 0, total_floors: 0, total_units: 0, is_featured: d.projects.length === 0,
+      thumbnail_url: `images/projects/${spec.slug}.jpg`, starting_price: 0, total_floors: 0, total_units: 0, is_featured: d.projects.length === 0,
       created_at: `${spec.launched}T00:00:00Z`,
     };
     d.projects.push(project);
@@ -94,7 +94,7 @@ export function generate(seed: number = SEED): Dataset {
     floorPlan(type, 1, 1).hotspots.forEach((h, i) => {
       d.unit_type_images.push({
         id: d.unit_type_images.length + 1, unit_type: type, room_key: h.key,
-        image_url: `images/units/${imageFile(type, h.key)}.webp`, caption: h.label, sort_order: i,
+        image_url: `images/interiors/${imageFile(type, h.key)}.webp`, caption: h.label, sort_order: i,
       });
     });
   }

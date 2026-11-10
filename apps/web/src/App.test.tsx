@@ -10,7 +10,8 @@ describe('app shell', () => {
     at('/');
     expect(screen.getByText(/ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง/)).toBeInTheDocument();
     expect(await screen.findByText('Demo Fallback Mode')).toBeInTheDocument();
-    expect(await screen.findByText('Noventa Ari')).toBeInTheDocument();
+    // once under "featured", once under "all projects"
+    expect(await screen.findAllByRole('heading', { name: 'Noventa Ari' })).toHaveLength(2);
   });
 
   it('shows a not-found page for unknown routes', () => {

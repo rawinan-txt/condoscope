@@ -87,4 +87,12 @@ describe('imageFile', () => {
     const files = new Set(generate().unit_type_images.map((i) => i.image_url));
     expect(files.size).toBe(17);
   });
+
+  it('gives every project a thumbnail named after its slug', () => {
+    for (const p of generate().projects) expect(p.thumbnail_url).toBe(`images/projects/${p.slug}.jpg`);
+  });
+
+  it('puts every interior image under images/interiors/ (spec section 5)', () => {
+    for (const i of generate().unit_type_images) expect(i.image_url).toMatch(/^images\/interiors\/[\w]+\/[\w]+\.webp$/);
+  });
 });

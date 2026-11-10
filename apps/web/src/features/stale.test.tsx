@@ -17,7 +17,7 @@ describe('a late answer from a page the user already left', () => {
   const CASES = [
     { name: 'unit page', from: '/unit/1', slow: '/api/units/1', to: '/unit/2', fast: () => buildUnitDetail(d, 2), heading: /^ห้อง A-702$/ },
     { name: 'explorer page', from: '/explorer/1', slow: '/api/projects/1/explorer', to: '/explorer/2', fast: () => buildExplorer(d, 2), heading: /^Selvara On Nut$/ },
-    { name: 'home page', from: '/', slow: '/api/projects', to: '/explorer/2', fast: () => buildExplorer(d, 2), heading: /^Selvara On Nut$/ },
+    { name: 'home page', from: '/', slow: '/api/projects?limit=50', to: '/explorer/2', fast: () => buildExplorer(d, 2), heading: /^Selvara On Nut$/ },
   ];
 
   it.each(CASES)('$name', async ({ from, slow, to, fast, heading }) => {

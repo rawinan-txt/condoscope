@@ -1,6 +1,6 @@
 import type { UnitView } from '@condoscope/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { effectiveStatus, loadReservations, RESERVATION_KEY, saveReservations } from './reservations';
+import { effectiveStatus, loadReservations, RESERVATION_KEY, saveReservations, subscribeReservations } from './reservations';
 
 const u = { id: 7, status: 'available' } as UnitView;
 
@@ -22,6 +22,24 @@ describe('demo reservations', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
     expect(loadReservations().size).toBe(0);
     expect(() => saveReservations(new Set([1]))).not.toThrow();
+  });
+
+  it('tells subscribers when reservations are saved, until they unsubscribe', () => {
+    let calls = 0;
+    const off = subscribeReservations(() => { calls++; });
+    saveReservations(new Set([1]));
+    expect(calls).toBe(1);
+    off();
+    saveReservations(new Set([2]));
+    expect(calls).toBe(1);
+  });
+
+  it('also reacts to changes made in another tab (storage event)', () => {
+    let calls = 0;
+    const off = subscribeReservations(() => { calls++; });
+    window.dispatchEvent(new StorageEvent('storage', { key: RESERVATION_KEY }));
+    expect(calls).toBe(1);
+    off();
   });
 
   it('shows "mine" only while the unit is still available', () => {

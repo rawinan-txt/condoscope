@@ -1,6 +1,6 @@
-# สถาปัตยกรรม CondoScope (ส่วนข้อมูลและ API)
+# สถาปัตยกรรม CondoScope
 
-เอกสารนี้รวมเรื่องฐานข้อมูลและ API ไว้ไฟล์เดียว (สเปกข้อ 13.3) แผน 3 จะมาเติมส่วนหน้าเว็บและการ deploy
+เอกสารนี้รวมเรื่องฐานข้อมูล API หน้าเว็บ และการ deploy ไว้ไฟล์เดียว (สเปกข้อ 13.3)
 ข้อมูลทั้งหมดเป็นข้อมูลจำลอง ไม่มีการขายจริง
 
 ## ภาพรวม
@@ -88,6 +88,48 @@ erDiagram
 **แคช:** ข้อมูลสาธารณะ `Cache-Control: public, max-age=300, s-maxage=3600`; health และ error ทุกตัว `no-store`; ทุก response มี `X-Content-Type-Options: nosniff`
 ไม่ทำระบบจำกัดจำนวน request (สเปกข้อ 13.4)
 
+## หน้าเว็บ (React + Vite, `apps/web`)
+
+ใช้ `HashRouter` เพราะ GitHub Pages ไม่มี rewrite ของเซิร์ฟเวอร์ (URL เป็น `/condoscope/#/…`)
+
+| เส้นทาง | หน้า | ข้อมูลที่เรียก |
+|---|---|---|
+| `#/` | หน้าแรก: Hero + ช่องค้นหา + ทำเลยอดนิยม + การ์ดโครงการ | `/api/projects`, ตัวเลือกตัวกรอง |
+| `#/search?…` | ผลค้นหา: ตัวกรองอยู่ใน URL ทั้งหมด (แชร์ลิงก์ได้) | `/api/projects?…` |
+| `#/project/:id` | หน้าโครงการ: แกลเลอรี ห้องว่างแยกประเภท ปุ่มเข้า Explorer | `/api/projects/:id` |
+| `#/explorer/:id` | Building Explorer 3D (สำรองเป็นภาพ SVG ถ้าไม่มี WebGL) | `/api/projects/:id/explorer` |
+| `#/unit/:id` | รายละเอียดห้อง แปลน + hotspot + ภาพ AI | `/api/units/:id` |
+| `#/map` | แผนที่ MapLibre + หมุด 5 โครงการ (สลับเป็นรายการได้) | `/api/projects` |
+| `#/reservations` | รายการจองจำลอง (เก็บใน localStorage ของเบราว์เซอร์เท่านั้น) | `/api/units/:id` ต่อรายการ |
+
+**ชั้นข้อมูล** (`services/api.ts` + `hooks/useResource.ts`): ทุกหน้าเรียกผ่าน `useResource(fetcher, deps)` ที่คืนสถานะ loading / ok / missing / error (มีปุ่มลองใหม่) คำตอบเก่าของคำขอที่ถูกแทนที่แล้วจะถูกทิ้ง ไม่เขียนทับหน้าใหม่ และรายงานแหล่งข้อมูล (live/fallback) ให้ Layout แสดงแบนเนอร์ Demo Fallback Mode
+
+**ตัวล้างพารามิเตอร์ค้นหา** (`packages/shared/src/searchParams.ts`): URL ค้นหาที่เป็นขยะ (ตัวเลขผิดรูป, ราคาต่ำสุดมากกว่าสูงสุด, `limit=999`, ข้อความยาว 500 ตัวอักษร) ถูกตัด/สลับ/ตกกลับค่าปกติก่อนส่ง API ทุกครั้ง มี test ว่าอินพุตเลอะ 273 แบบผ่าน validation ของ API ได้ ผู้ใช้จึงไม่เจอ 400
+
+**แผนที่และเครดิต:** ใช้ MapLibre + style `https://tiles.openfreemap.org/styles/liberty` (ไม่ต้องมี key) เครดิต "OpenFreeMap © OpenMapTiles ข้อมูลจาก OpenStreetMap" แสดงเสมอ หมุดเป็นปุ่มที่โฟกัสด้วยคีย์บอร์ดได้ ถ้าแผนที่โหลดไม่ได้ (ก่อน style โหลดเสร็จ) หน้าแสดงข้อความแจ้งและรายการโครงการแทน เงื่อนไขของ OpenFreeMap: ผู้ใช้ต้องอายุ 18 ปีขึ้นไป และไม่มี SLA
+
+**งบขนาด bundle** (`npm run build -w web && npm run check:bundles -w web` ล้มถ้าเกิน หรือถ้า three.js/maplibre หลุดเข้าหน้าแรก):
+
+| ชิ้นส่วน | โหลดเมื่อ | งบ (gzip) | วัดจริง |
+|---|---|---|---|
+| หน้าแรก (entry + runtime) | เปิดเว็บ | 130 KB | ≈ 99 KB |
+| `Building3D` (three.js + R3F) | เข้า Explorer | 600 KB | ≈ 292 KB |
+| `MapView` (maplibre-gl) | เข้าแผนที่ | 323 KB | ≈ 284 KB |
+| `fallback` (ข้อมูลสำรอง) | เมื่อ API ล่มเท่านั้น | ต้องแยกเป็น chunk ของตัวเอง | ≈ 29 KB |
+
+## การ deploy และ CI (`.github/workflows/`)
+
+| ไฟล์ | เมื่อไร | ทำอะไร | สิทธิ์ |
+|---|---|---|---|
+| `ci.yml` | ทุก push / PR | typecheck, test, build, ตรวจ bundle; งาน e2e (Playwright) เฉพาะ push เข้า `main` | `contents: read` |
+| `deploy-api.yml` | push เข้า `main` ที่แตะ `apps/api`, `database`, `packages/shared` | `d1 migrations apply --remote` แล้ว `wrangler deploy` | `contents: read` + secrets Cloudflare |
+| `deploy-web.yml` | push เข้า `main` | build (ใช้ variable `VITE_API_URL`) แล้วขึ้น GitHub Pages | `pages: write`, `id-token: write` เฉพาะ job deploy |
+| `seed-db.yml` | กดเองเท่านั้น และต้องพิมพ์ `SEED` | ใส่ข้อมูลจำลองลงฐานข้อมูลจริง (เขียน ~12,000 แถว; seed ซ้ำอาจ ~2 เท่า) ใช้ lock `d1-remote` ร่วมกับ deploy-api | `contents: read` |
+
+ค่าที่ต้องตั้งใน GitHub repo: secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` · variable `VITE_API_URL` (ที่อยู่ `*.workers.dev`, ไม่ใช่ความลับ) · Pages source = GitHub Actions · `database_id` ใน `apps/api/wrangler.jsonc` (ไม่ใช่ความลับ)
+
+`packages/shared/test/repo.test.ts` ตรวจว่า workflow ไม่มี token ฝังและ action ทุกตัวอยู่ในเวอร์ชันที่ตกลงกัน หลัง deploy ใช้ `node scripts/smoke-live.mjs <URL ของ API>` ตรวจ status, CORS, `cache-control`, `cf-cache-status`
+
 ## วิธีรันในเครื่อง (ไม่ต้องมีบัญชี Cloudflare)
 
 ```bash
@@ -107,5 +149,5 @@ npm run gen           # สร้าง fallback.json และ seed.sql ให�
 - **D1 ฟรี:** อ่าน 5 ล้านแถว/วัน (นับแถวที่สแกน ไม่ใช่แถวที่คืน) · เขียน 100,000 แถว/วัน · 500 MB ต่อฐานข้อมูล · 50 query ต่อ request · 100 bound parameters ต่อ query
 - **Workers ฟรี:** 100,000 request/วัน · CPU 10 ms ต่อ request
 - การออกแบบ: SQL ชุดเดียวต่อ endpoint (`db.batch`, ไม่เกิน 4 statement ต่อ request มี test นับ), มี index ตามที่ query ใช้, `Cache-Control` ลดการอ่านซ้ำ, ไม่ parse ทีละแถวด้วย zod
-- **seed 1 รอบเขียนราว 12,000+ แถว (รวม index) อย่า seed ฐานข้อมูลจริงซ้ำหลายรอบ**
+- **seed รอบแรกเขียนราว 12,000+ แถว (รวม index) การ seed ซ้ำบนฐานข้อมูลที่มีข้อมูลแล้วอาจนับราว 2 เท่า (ผู้ตรวจประเมิน ยังไม่ยืนยันวิธีนับ DELETE ของ D1) อย่า seed ฐานข้อมูลจริงซ้ำหลายรอบ**
 - ต้องวัดตอน deploy จริง (วัดในเครื่องไม่ได้): CPU ต่อ request ของ `/api/projects/:id/explorer` (ในเครื่อง ~223 KB ก่อนบีบอัด ตอบ ~40 ms), `cf-cache-status` บน `*.workers.dev` (เอกสารไม่ยืนยันว่า Cache API ทำงานบนโดเมนนี้), จำนวนแถวที่อ่านต่อวัน

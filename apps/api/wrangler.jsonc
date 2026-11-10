@@ -9,8 +9,8 @@
     {
       "binding": "DB",
       "database_name": "condoscope",
-      // placeholder for local dev/tests only; plan 3 replaces it with the real id from `wrangler d1 create`
-      "database_id": "local-placeholder",
+      // id from `wrangler d1 create condoscope`; an identifier, not a secret (the API token is what grants access)
+      "database_id": "51398f2d-69bb-40b9-b376-4d3944089191",
       "migrations_dir": "../../database/migrations"
     }
   ]
