@@ -37,7 +37,7 @@ describe('explorer on a phone (bottom sheet)', () => {
   it('shows a one-line summary of the picked room while peeking, with the way to its page', async () => {
     at('/explorer/1?unit=1');
     const s = await sheet();
-    expect(within(s).getByText(/ห้อง A-701/)).toBeInTheDocument();
+    expect(await within(s).findByText(/ห้อง A-701/)).toBeInTheDocument(); // the ?unit= pick lands just after the first render
     expect(within(s).getByRole('link', { name: 'ดูรายละเอียดห้อง' }).getAttribute('href')).toMatch(/\/unit\/1$/);
     expect(within(s).getByRole('button', { name: 'ขยายแผง' })).toHaveAttribute('aria-expanded', 'false'); // a pick does not cover the building
     expect(screen.queryByRole('heading', { name: 'ห้อง A-701' })).not.toBeInTheDocument(); // the big details panel is for the expanded sheet
@@ -46,6 +46,7 @@ describe('explorer on a phone (bottom sheet)', () => {
   it('keeps the full details in the expanded sheet', async () => {
     at('/explorer/1?unit=1');
     const s = await sheet();
+    await within(s).findByText(/ห้อง A-701/);
     await userEvent.click(within(s).getByRole('button', { name: 'ขยายแผง' }));
     expect(within(s).getByRole('heading', { name: 'ห้อง A-701' })).toBeInTheDocument();
   });
