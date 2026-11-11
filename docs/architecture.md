@@ -151,3 +151,20 @@ npm run gen           # สร้าง fallback.json และ seed.sql ให�
 - การออกแบบ: SQL ชุดเดียวต่อ endpoint (`db.batch`, ไม่เกิน 4 statement ต่อ request มี test นับ), มี index ตามที่ query ใช้, `Cache-Control` ลดการอ่านซ้ำ, ไม่ parse ทีละแถวด้วย zod
 - **seed รอบแรกเขียนราว 12,000+ แถว (รวม index) การ seed ซ้ำบนฐานข้อมูลที่มีข้อมูลแล้วอาจนับราว 2 เท่า (ผู้ตรวจประเมิน ยังไม่ยืนยันวิธีนับ DELETE ของ D1) อย่า seed ฐานข้อมูลจริงซ้ำหลายรอบ**
 - ต้องวัดตอน deploy จริง (วัดในเครื่องไม่ได้): CPU ต่อ request ของ `/api/projects/:id/explorer` (ในเครื่อง ~223 KB ก่อนบีบอัด ตอบ ~40 ms), `cf-cache-status` บน `*.workers.dev` (เอกสารไม่ยืนยันว่า Cache API ทำงานบนโดเมนนี้), จำนวนแถวที่อ่านต่อวัน
+
+### ผลวัดบน API จริง (2026-11-11, `https://condoscope-api.rawinanbunsai.workers.dev`)
+
+รัน `node scripts/smoke-live.mjs <URL>` จากเครื่องผู้พัฒนา (กรุงเทพฯ, CF-RAY ลงท้าย `BKK`) 3 รอบ ทั้ง 3 รอบผ่าน (status 200 และมี `Access-Control-Allow-Origin: https://rawinan-txt.github.io`)
+
+| endpoint | ขนาดก่อนบีบอัด | เวลาตอบ 3 รอบ | `cache-control` |
+|---|---|---|---|
+| `/api/health` | 21 B | 292 / 141 / 133 ms | `no-store` |
+| `/api/projects` | 3,916 B | 75 / 49 / 66 ms | `public, max-age=300, s-maxage=3600` |
+| `/api/projects/1/explorer` | 223,290 B | 97 / 88 / 79 ms | `public, max-age=300, s-maxage=3600` |
+
+- ขนาด response ตรงกับที่วัดในเครื่องทุกไบต์ (223,290 B) แสดงว่าข้อมูลที่ seed ลง D1 จริงตรงกับ `fallback.json`
+- ตอบแบบบีบอัด `Content-Encoding: br` · มี `Vary: Origin`
+- **`cf-cache-status` ไม่มีใน response เลย** (ทั้ง 3 endpoint) เวลาตอบรอบที่ 2–3 ไม่ต่างจากรอบแรกอย่างมีนัยสำคัญ จึงไม่มีหลักฐานว่าแคชฝั่ง Cloudflare ทำงานบน `*.workers.dev` ต้องถือว่า **ทุก request ถึง Worker และ D1** (ตรงกับที่เอกสาร Cloudflare ไม่ยืนยัน) งบอ่านแถวจึงต้องคิดแบบไม่มีแคช · ถ้าต้องการแคชจริงต้องมีโดเมนของตัวเอง ซึ่งขัดกับกฎงบ 0 บาท จึงยังไม่ทำ
+- ตรวจพฤติกรรม: `POST /api/projects` → 405 · Origin แปลก (`https://evil.example`) ไม่ได้ header ACAO
+- **ยังไม่ได้วัด (ต้องดูในแดชบอร์ด Cloudflare โดยผู้ใช้):** CPU time ต่อ request ของ explorer เทียบเพดาน 10 ms บน Workers ฟรี, จำนวนแถวที่ D1 อ่าน/เขียนต่อวัน, ผลของการ seed 1 รอบว่านับเขียนกี่แถวจริง ถ้า CPU เกินเพดานให้เปิดเป็นงานใหม่ ไม่แก้เงียบๆ
+- สคริปต์วัดจากเครื่องเดียวและเวลาผ่านเครือข่ายบ้าน ตัวเลขเวลาจึงเป็นแค่ภาพคร่าวๆ ไม่ใช่ค่ามาตรฐาน

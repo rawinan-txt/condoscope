@@ -14,8 +14,9 @@ const ACTION_MAJORS: Record<string, string> = {
   'actions/configure-pages': 'v5',
   'actions/upload-pages-artifact': 'v4',
   'actions/deploy-pages': 'v4',
-  'cloudflare/wrangler-action': 'v4',
 };
+// receives the Cloudflare API token, so it is pinned to a commit (a moved tag could not swap the code under us)
+const PINNED_BY_SHA = 'cloudflare/wrangler-action';
 
 describe('github workflows', () => {
   it('has the four workflows', () => {
@@ -32,14 +33,16 @@ describe('github workflows', () => {
       });
 
       it('has no token-looking literal and takes Cloudflare values from secrets/vars', () => {
-        expect(text).not.toMatch(/\b[A-Za-z0-9_-]{40,}\b/);
+        // `uses:` lines hold public commit SHAs, not secrets
+        expect(text.replace(/uses:.*/g, '')).not.toMatch(/\b[A-Za-z0-9_-]{40,}\b/);
         for (const m of text.matchAll(/^\s*(CLOUDFLARE_\w+|apiToken|accountId)\s*:\s*(.+)$/gm)) {
           expect(m[2], m[1]).toMatch(/^\$\{\{\s*(secrets|vars)\.\w+\s*\}\}$/);
         }
       });
 
       it('pins every action to the agreed major version', () => {
-        for (const m of text.matchAll(/uses:\s*([\w.-]+\/[\w.-]+)@(\S+)/g)) {
+        for (const m of text.matchAll(/uses:\s*([\w.-]+\/[\w.-]+)@(\S+)(.*)/g)) {
+          if (m[1] === PINNED_BY_SHA) continue; // checked in its own test below
           expect(ACTION_MAJORS[m[1]], `unknown action ${m[1]}`).toBeDefined();
           expect(m[2], m[1]).toBe(ACTION_MAJORS[m[1]]);
         }
@@ -72,6 +75,35 @@ describe('github workflows', () => {
   it('.gitignore keeps env files (where a token could be put) out of git but keeps .env.example', () => {
     const ignore = readFileSync(fileURLToPath(new URL('../../../.gitignore', import.meta.url)), 'utf8').split(/\r?\n/);
     for (const line of ['.env', '.env.*', '!.env.example', '*.local', '.dev.vars']) expect(ignore, line).toContain(line);
+  });
+
+  it('wrangler-action (it gets the Cloudflare token) is pinned to a full commit SHA with a version comment', () => {
+    for (const f of ['deploy-api.yml', 'seed-db.yml']) {
+      const uses = [...load(f).text.matchAll(/uses:\s*cloudflare\/wrangler-action@(\S+)(.*)/g)];
+      expect(uses.length, f).toBeGreaterThan(0);
+      for (const m of uses) {
+        expect(m[1], f).toMatch(/^[0-9a-f]{40}$/);
+        expect(m[2], f).toMatch(/#\s*v4\.\d+\.\d+/);
+      }
+    }
+  });
+
+  it('deploy-api and deploy-web run typecheck and tests before they deploy anything', () => {
+    const order = (steps: any[], re: RegExp) => steps.findIndex((s) => re.test(`${s.run ?? ''} ${s.uses ?? ''}`));
+    const api = load('deploy-api.yml').doc.jobs.deploy.steps;
+    const firstDeploy = order(api, /wrangler-action/);
+    for (const cmd of [/npm run typecheck/, /npm test/]) {
+      const at = order(api, cmd);
+      expect(at, `deploy-api ${cmd}`).toBeGreaterThan(-1);
+      expect(at).toBeLessThan(firstDeploy);
+    }
+    const web = load('deploy-web.yml').doc.jobs.build.steps;
+    const build = order(web, /npm run build -w web/);
+    for (const cmd of [/npm run typecheck/, /npm test/]) {
+      const at = order(web, cmd);
+      expect(at, `deploy-web ${cmd}`).toBeGreaterThan(-1);
+      expect(at).toBeLessThan(build);
+    }
   });
 
   it('ci runs e2e only on main pushes or by hand', () => {

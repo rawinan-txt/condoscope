@@ -18,6 +18,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # never publish untested code
+      - run: npm run typecheck
+      - run: npm test
       - run: npm run build -w web
         env:
           # public URL of the API, not a secret
