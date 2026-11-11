@@ -12,7 +12,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
-  use: { baseURL: `http://localhost:${PORT}/condoscope/`, viewport: { width: 1400, height: 900 } },
+  use: { baseURL: `http://localhost:${PORT}/condoscope/`, viewport: { width: 1400, height: 900 }, trace: 'retain-on-failure', screenshot: 'only-on-failure' },
   projects: [
     { name: 'chromium', grepInvert: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: SOFT_GL } } },
     { name: 'chromium-nogl', grep: /@nogl/, use: { browserName: 'chromium', launchOptions: { args: ['--disable-webgl', '--disable-webgl2', '--disable-gpu'] } } },
