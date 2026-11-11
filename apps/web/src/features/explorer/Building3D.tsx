@@ -19,14 +19,13 @@ declare global {
   interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null } }
 }
 
-export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUnavailable(): void }) {
+export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi; time: TimeOfDay; onUnavailable(): void }) {
   const bounds = useMemo(() => projectBounds(x.buildings), [x.buildings]);
   const home = useMemo(() => homeView(bounds), [bounds]);
   const wrap = useRef<HTMLDivElement>(null);
   const [tipAt, setTipAt] = useState<{ left: number; top: number } | null>(null);
   const coarse = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
   const [low, setLow] = useState(coarse); // phones start in low quality; desktops drop to it when FPS stays < 40
-  const [time, setTime] = useState<TimeOfDay>('dusk');
   useEffect(() => { uNight.value = time === 'dusk' ? 1 : 0; }, [time]);
   const hovered = x.unit(x.hoveredId);
 
@@ -39,7 +38,7 @@ export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUna
   useEffect(() => () => { document.body.style.cursor = ''; }, []);
 
   return (
-    <div ref={wrap} className="relative h-full w-full overflow-hidden rounded-lg" style={{ background: LOOK[time].bg }}>
+    <div ref={wrap} className="relative h-full w-full overflow-hidden" style={{ background: LOOK[time].bg }}>
       <Canvas
         shadows="percentage"
         dpr={[1, low ? 1.25 : 2]}
@@ -51,13 +50,6 @@ export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUna
       >
         <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => setLow(true)} />
       </Canvas>
-      <div className="absolute right-2 top-2 flex rounded-md bg-white/90 p-0.5 text-sm shadow" role="group" aria-label="ช่วงเวลา">
-        {(['dusk', 'day'] as const).map((t) => (
-          <button key={t} type="button" aria-pressed={time === t} onClick={() => setTime(t)} className={`rounded px-2.5 py-1 ${time === t ? 'bg-accent text-white' : 'hover:bg-slate-100'}`}>
-            {t === 'dusk' ? 'พลบค่ำ' : 'กลางวัน'}
-          </button>
-        ))}
-      </div>
       {hovered && tipAt && <UnitTooltip unit={hovered} mine={x.mine} left={tipAt.left} top={tipAt.top} />}
     </div>
   );

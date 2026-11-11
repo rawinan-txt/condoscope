@@ -29,7 +29,7 @@ try {
     await page.goto(`${base}#/explorer/${p.id}`);
     await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
     // the day/dusk switch and any tooltip are UI, not part of the picture
-    await page.addStyleTag({ content: '[aria-label="ช่วงเวลา"], [role="tooltip"] { visibility: hidden !important; }' });
+    await page.addStyleTag({ content: '[aria-label="ช่วงเวลา"], [role="tooltip"], .glass { visibility: hidden !important; }' });
     await page.waitForTimeout(3000); // first frames, shadows, bloom
     const path = `${outDir}${p.slug}.jpg`;
     await page.locator('canvas').screenshot({ path, type: 'jpeg', quality: 80 });
