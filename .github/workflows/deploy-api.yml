@@ -18,6 +18,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # never ship untested code: these gate the two deploy steps below
+      - run: npm run typecheck
+      - run: npm test
       - name: Apply D1 migrations
         uses: cloudflare/wrangler-action@v4
         with:

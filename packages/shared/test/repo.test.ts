@@ -74,6 +74,24 @@ describe('github workflows', () => {
     for (const line of ['.env', '.env.*', '!.env.example', '*.local', '.dev.vars']) expect(ignore, line).toContain(line);
   });
 
+  it('deploy-api and deploy-web run typecheck and tests before they deploy anything', () => {
+    const order = (steps: any[], re: RegExp) => steps.findIndex((s) => re.test(`${s.run ?? ''} ${s.uses ?? ''}`));
+    const api = load('deploy-api.yml').doc.jobs.deploy.steps;
+    const firstDeploy = order(api, /wrangler-action/);
+    for (const cmd of [/npm run typecheck/, /npm test/]) {
+      const at = order(api, cmd);
+      expect(at, `deploy-api ${cmd}`).toBeGreaterThan(-1);
+      expect(at).toBeLessThan(firstDeploy);
+    }
+    const web = load('deploy-web.yml').doc.jobs.build.steps;
+    const build = order(web, /npm run build -w web/);
+    for (const cmd of [/npm run typecheck/, /npm test/]) {
+      const at = order(web, cmd);
+      expect(at, `deploy-web ${cmd}`).toBeGreaterThan(-1);
+      expect(at).toBeLessThan(build);
+    }
+  });
+
   it('ci runs e2e only on main pushes or by hand', () => {
     const { doc } = load('ci.yml');
     expect(doc.jobs.e2e.if).toMatch(/refs\/heads\/main/);
