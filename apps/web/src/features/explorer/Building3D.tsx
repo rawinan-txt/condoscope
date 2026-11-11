@@ -24,6 +24,9 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
   const bounds = useMemo(() => projectBounds(x.buildings), [x.buildings]);
   const home = useMemo(() => homeView(bounds), [bounds]);
   const wrap = useRef<HTMLDivElement>(null);
+  // leaving the 3D view (switching to 2D) releases the GL context, which fires webglcontextlost: that is not "WebGL is unavailable"
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
   const [tipAt, setTipAt] = useState<{ left: number; top: number } | null>(null);
   const coarse = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
   const [low, setLow] = useState(coarse); // phones start in low quality; desktops drop to it when FPS stays < 40
@@ -45,7 +48,7 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
         dpr={[1, low ? 1.25 : 2]}
         camera={{ fov: 38, near: 1, far: 5000, position: home.position }}
         gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, powerPreference: 'high-performance' }}
-        onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onUnavailable(); })}
+        onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); if (alive.current) onUnavailable(); })}
         onPointerMissed={() => x.hover(null)}
         role="img"
         aria-label="ตึก 3 มิติ ลากเพื่อหมุน เลื่อนล้อเพื่อซูม"

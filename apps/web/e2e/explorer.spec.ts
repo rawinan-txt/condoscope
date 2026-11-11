@@ -165,3 +165,21 @@ test('ดูทั้งชั้น + ลดการเคลื่อนไ�
   await page.getByRole('button', { name: `ดูทั้งชั้น ${floorNo(unitById(u.id))}` }).click();
   await expect.poll(() => cameraBusy(page), { timeout: 5000 }).toBe(false); // a few frames, not the seconds a glide takes
 });
+
+test('สลับ 3D → 2D → 3D ได้: ปุ่มสลับไม่หายและตึก 3D กลับมา', async ({ page }) => {
+  await open3D(page, 1);
+  await page.getByRole('button', { name: 'ภาพด้านตึก 2D' }).click();
+  await expect(page.getByRole('group', { name: /ภาพด้านหน้า/ })).toBeVisible();
+  // releasing the 3D canvas fires webglcontextlost a moment later: that must not be taken for "this device has no WebGL"
+  await page.waitForTimeout(2000);
+  await expect(page.getByText('เครื่องนี้แสดง 3D ไม่ได้')).toHaveCount(0);
+  const to3d = page.getByRole('button', { name: 'ตึก 3D' });
+  await expect(to3d).toBeVisible();
+  await to3d.click();
+  await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
+  await expect(page.locator('canvas')).toBeVisible();
+  // and back and forth again
+  await page.getByRole('button', { name: 'ภาพด้านตึก 2D' }).click();
+  await page.waitForTimeout(1500);
+  await expect(page.getByRole('button', { name: 'ตึก 3D' })).toBeVisible();
+});
