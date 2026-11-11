@@ -106,3 +106,24 @@ test('เลือกห้องด้านหลังตึกจากร�
   await page.mouse.click(p.x, p.y);
   await expect(panelTitle(page)).toHaveText(`ห้อง ${back.unit_number}`);
 });
+
+test('ห้องที่อยู่ใต้แผงลอยไม่ถูกนับว่ามองเห็น (จอแคบ แผงทับตึก)', async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 700 });
+  await open3D(page, 1);
+  const buildingIds = new Set(data.buildings.filter((b) => b.project_id === 1).map((b) => b.id));
+  const ids = data.units.filter((u) => buildingIds.has(u.building_id)).map((u) => u.id);
+  const result = await page.evaluate((all) => {
+    let visible = 0;
+    const underPanel: number[] = [];
+    for (const id of all) {
+      const p = window.__condoscope!.projectUnit(id);
+      if (!p) continue;
+      visible++;
+      const el = document.elementFromPoint(p.x, p.y);
+      if (!el || el.tagName !== 'CANVAS') underPanel.push(id);
+    }
+    return { visible, underPanel };
+  }, ids);
+  expect(result.visible).toBeGreaterThan(20);
+  expect(result.underPanel).toEqual([]);
+});

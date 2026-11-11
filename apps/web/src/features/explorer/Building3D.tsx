@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3, type Camera } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import City from './scene/City';
-import { homeView, projectBounds, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import { homeView, isCovered, projectBounds, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
 import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
@@ -162,8 +162,8 @@ function viewFor(cut: CutFloor, buildings: Building[], home: { position: Vec3; t
 }
 
 /**
- * Screen position of a unit centre, or null when it is off screen, on a cut-away floor or hidden behind
- * another unit. With px > 0 the unit must also cover px pixels around its centre (so a click cannot land on a neighbour).
+ * Screen position of a unit centre, or null when it is off screen, on a cut-away floor, hidden behind
+ * another unit or under a floating panel. With px > 0 the unit must also cover px pixels around its centre (so a click cannot land on a neighbour).
  */
 function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, camera: Camera, rect: DOMRect, px: number) {
   const u = x.unit(id);
@@ -177,7 +177,10 @@ function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, cam
     const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
     if (!hit || x.units[hit.instanceId!].id !== id) return null;
   }
-  return { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height };
+  const point = { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height };
+  // a room under a floating panel cannot be seen or clicked, so it does not count as visible (the camera then turns to it)
+  const panels = [...document.querySelectorAll('.glass')].map((el) => el.getBoundingClientRect());
+  return isCovered(point.x, point.y, panels, 6) ? null : point;
 }
 
 /** Test hook used by the Playwright success-criterion test. */

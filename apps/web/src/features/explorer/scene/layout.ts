@@ -57,3 +57,10 @@ export function homeView(r: Bounds): { position: Vec3; target: Vec3 } {
   const ty = r.top * 0.5;
   return { position: [cx + dir.x, ty + dir.y, cz + dir.z], target: [cx, ty, cz] };
 }
+
+export interface Box2D { left: number; top: number; right: number; bottom: number }
+
+/** True when the screen point lies under one of the floating panels (grown by `margin` px). */
+export function isCovered(px: number, py: number, panels: Box2D[], margin = 0): boolean {
+  return panels.some((r) => px >= r.left - margin && px <= r.right + margin && py >= r.top - margin && py <= r.bottom + margin);
+}

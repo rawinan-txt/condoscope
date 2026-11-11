@@ -1,7 +1,7 @@
 import { buildingWidth, unitBox, type ExplorerPayload } from '@condoscope/shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getExplorer } from '../../../services/api';
-import { homeView, projectBounds, unitViewGoal, unitWorldCenter } from './layout';
+import { homeView, isCovered, projectBounds, unitViewGoal, unitWorldCenter } from './layout';
 
 let ari: ExplorerPayload;
 let onNut: ExplorerPayload;
@@ -60,5 +60,20 @@ describe('scene layout', () => {
     expect(dist).toBeGreaterThan(r.top);
     expect(v.target[1]).toBeGreaterThan(0);
     expect(v.target[1]).toBeLessThan(r.top);
+  });
+});
+
+describe('isCovered (units under the floating panels count as hidden)', () => {
+  const panels = [{ left: 100, top: 50, right: 300, bottom: 250 }, { left: 900, top: 0, right: 1260, bottom: 700 }];
+  it('is true inside a panel and false in the free space', () => {
+    expect(isCovered(200, 100, panels)).toBe(true);
+    expect(isCovered(1000, 300, panels)).toBe(true);
+    expect(isCovered(600, 300, panels)).toBe(false);
+    expect(isCovered(600, 300, [])).toBe(false);
+  });
+  it('keeps a margin so a click cannot land on the panel edge', () => {
+    expect(isCovered(305, 100, panels, 8)).toBe(true); // 5 px outside the panel, inside the margin
+    expect(isCovered(320, 100, panels, 8)).toBe(false);
+    expect(isCovered(305, 100, panels)).toBe(false);
   });
 });
