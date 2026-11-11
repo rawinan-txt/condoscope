@@ -29,11 +29,11 @@
 
 | ชุดภาพ | ที่มี | ตัดสิน |
 |---|---|---|
-| ภายนอกโครงการ 5 ภาพ (`images/projects/*.jpg`) | 854×536 px ภาพ render จากโมเดล 3 มิติ ฉากพลบค่ำ ถนนและบล็อกเมืองเดียวกันทุกภาพ | **ไม่พอสำหรับ Hero เต็มจอ**: ความละเอียดต่ำ (เต็มจอ 1920 ต้องขยาย ~2.2 เท่า จะเบลอ), สไตล์ low-poly ดู "เกม" มากกว่าหรู, ห้าโครงการหน้าตาเกือบเหมือนกัน, โครงการละภาพเดียว · **ใช้ต่อได้เป็นภาพเล็ก** (การ์ด และเป็นภาพ "จากโมเดล 3 มิติ" ในแกลเลอรี ซึ่งตรงกับสิ่งที่ผู้ใช้เห็นใน Explorer) |
+| ภายนอกโครงการ 5 ภาพ (`images/projects/*.jpg`) | 854×536 px ภาพ render จากโมเดล 3 มิติ ฉากพลบค่ำ ถนนและบล็อกเมืองเดียวกันทุกภาพ | **ไม่พอสำหรับ Hero เต็มจอ**: ความละเอียดต่ำ (เต็มจอ 1376 ต้องขยาย ~1.6 เท่า (ถ้า 1920 ~2.2 เท่า) จะเบลอ), สไตล์ low-poly ดู "เกม" มากกว่าหรู, ห้าโครงการหน้าตาเกือบเหมือนกัน, โครงการละภาพเดียว · **ใช้ต่อได้เป็นภาพเล็ก** (การ์ด และเป็นภาพ "จากโมเดล 3 มิติ" ในแกลเลอรี ซึ่งตรงกับสิ่งที่ผู้ใช้เห็นใน Explorer) |
 | ภายในห้อง 17 ภาพ (`images/interiors/**`) | 1264×848 WebP โทนไม้โอ๊ก ผนังขาวอุ่น ทองเหลือง | **พอและเข้ากับทิศทางนี้** (โทนอุ่นเข้ากับงาช้าง/แชมเปญ) ใช้ที่ความกว้างแสดงผลไม่เกินราวครึ่งหน้าจอหรือไม่เกิน ~1264 px; ยังไม่ถึงระดับหรูสุด แต่ไม่ต้องเจนใหม่ |
 | ภาพที่ขาด | — | (ก) ภาพ Hero หน้าแรก 1 ภาพ (ข) ภาพภายนอกใหม่ครบ 5 โครงการ · (ค, ไม่บังคับ) ภาพส่วนกลาง 3 ภาพสำหรับหน้าโครงการ: สระว่ายน้ำ ล็อบบี้ สวนลอยฟ้า |
 
-**ข้อกำหนดภาพใหม่:** แนวนอน 16:9, ด้านยาว ≥ 2400 px (ส่งเป็น png/jpg แล้วให้ Claude แปลงเป็น WebP 1920 กับ 960 กว้าง), ไม่มีคน ตัวหนังสือ โลโก้ ลายน้ำ, ไม่มีสถานที่หรือสถานีรถไฟฟ้าที่ดูออกว่าเป็นของจริง, ใช้เครื่องมือเดียวกันและจบในแชทเดียว, ตรวจเงื่อนไขของเครื่องมือว่าให้เผยแพร่บนเว็บ portfolio ได้ (เหมือน `docs/image-prompts.md` ข้อ 6)
+**ข้อกำหนดภาพใหม่:** แนวนอน 16:9, ด้านยาว ≥ 2400 px (ส่งเป็น png/jpg แล้วให้ Claude แปลงเป็น WebP 1376 กับ 960 กว้าง), ไม่มีคน ตัวหนังสือ โลโก้ ลายน้ำ, ไม่มีสถานที่หรือสถานีรถไฟฟ้าที่ดูออกว่าเป็นของจริง, ใช้เครื่องมือเดียวกันและจบในแชทเดียว, ตรวจเงื่อนไขของเครื่องมือว่าให้เผยแพร่บนเว็บ portfolio ได้ (เหมือน `docs/image-prompts.md` ข้อ 6)
 
 **ส่วนสไตล์กลาง (วางหน้าทุก prompt):**
 
@@ -132,13 +132,13 @@ Photorealistic architectural exterior photograph of a fictional luxury high-rise
 **Files:** Create `components/HeroImage.tsx`, `components/HeroImage.test.tsx` · Modify `features/home/Hero.tsx`, `features/home/HomePage.tsx`, `features/home/HomePage.test.tsx` · เพิ่มไฟล์ภาพ (Task 10)
 
 **Interfaces:**
-- Produces: `heroSrc(thumbnailUrl: string): { src: string; srcSm: string }` — แทน `.jpg` ด้วย `-hero.webp` และ `-hero-sm.webp`; `<HeroImage project={Project} priority? />` แสดง `<img>` (`alt=""` ถ้าตกแต่ง, `srcset` 960w/1920w, `fetchpriority="high"` เมื่อ `priority`) พร้อม `AiBadge` เมื่อเป็นภาพ AI; `onError` ครั้งแรกสลับไป `thumbnail_url`, ครั้งที่สองซ่อนรูป (พื้นหมึกเป็นสีสำรอง)
+- Produces: `heroSrc(thumbnailUrl: string): { src: string; srcSm: string }` — แทน `.jpg` ด้วย `-hero.webp` และ `-hero-sm.webp`; `<HeroImage project={Project} priority? />` แสดง `<img>` (`alt=""` ถ้าตกแต่ง, `srcset` 960w/1376w, `fetchpriority="high"` เมื่อ `priority`) พร้อม `AiBadge` เมื่อเป็นภาพ AI; `onError` ครั้งแรกสลับไป `thumbnail_url`, ครั้งที่สองซ่อนรูป (พื้นหมึกเป็นสีสำรอง)
 - Consumes: `useReveal` (Task 3), `THEME` (Task 1)
 
 - [ ] **Step 1: test ที่ล้ม** — `heroSrc('images/projects/noventa-ari.jpg')` ได้ `images/projects/noventa-ari-hero.webp` และ `-hero-sm.webp`; `HeroImage` เมื่อ `error` ครั้งแรกใช้ thumbnail, ครั้งที่สองไม่มี `<img>` แตกค้าง; `HomePage.test`: ช่อง "ชื่อโครงการหรือทำเล" ยังอยู่และส่งแบบฟอร์มได้, `<details>` "ตัวกรองเพิ่มเติม" ปิดอยู่ตอนเริ่มและเมื่อเปิดมี "เขต" กับ "ราคาต่ำสุด", ส่งฟิลด์ที่ซ่อนอยู่แล้วค่าเข้า URL ถูก (**ฟิลด์ใน `<details>` ปิดต้องยังถูกส่ง**) · test คอนทราสต์: คู่ ตัวอักษรขาว/scrim ที่ความทึบต่ำสุดของ gradient บนพื้นขาวสนิท (ใช้ `compositeOver`) ≥ 4.5 → เพิ่มเป็น `PAIRS` ใน `theme.ts`
 - [ ] **Step 2: รันให้ล้ม** `npm test -w web -- HeroImage HomePage theme`
 - [ ] **Step 3: เขียน `HeroImage` และจัด `Hero`** ตามข้อ 4 ของตาราง: `min-h` = `max(560px, 100svh − 3.5rem)`; หัวข้อ `font-serif` ขนาดใช้ `clamp()` ไม่เกิน 4.5rem; scrim ไล่เฉด `from-black/70 via-black/35`; แถบค้นหาพื้นงาช้างโปร่งน้อย ฟิลด์เดิมทั้งหมด; ไม่ใช้ `loading="lazy"` กับรูป Hero · ส่วนอื่นของ `HomePage` (ทำเลยอดนิยมเป็นข้อความลิงก์ไม่ใช่ pill, โครงการแนะนำ/ทั้งหมดในกริดห่างขึ้น, ส่วนแผนที่ลดกรอบ) ใช้ `useReveal`
-- [ ] **Step 4: ตรวจน้ำหนัก** ภาพ Hero แต่ละภาพ ≤ 250 KB (1920 กว้าง) และ ≤ 90 KB (960 กว้าง) — ถ้าเกินให้ลดคุณภาพ WebP
+- [ ] **Step 4: ตรวจน้ำหนัก** ภาพ Hero แต่ละภาพ ≤ 250 KB (1376 กว้าง ขนาดเดิมของภาพที่ผู้ใช้ส่ง ห้ามขยาย) และ ≤ 90 KB (960 กว้าง) — ถ้าเกินให้ลดคุณภาพ WebP
 - [ ] **Step 5: รัน** `npm test -w web`, `npm run build -w web && npm run check:bundles -w web` — Expected: ผ่าน, entry ≤ 105 KB gzip (ถ้าเกินให้หาสาเหตุก่อน ไม่ขยายเพดาน)
 - [ ] **Step 6: e2e** เพิ่มใน `e2e/journeys.spec.ts`: หน้าแรกที่ viewport 390×844 และ 320×640 → ช่องค้นหาและปุ่มค้นหาอยู่ในจอโดยไม่เลื่อน, `scrollWidth <= clientWidth`; บล็อกคำขอ `*-hero*.webp` ด้วย `route.abort()` แล้วช่องค้นหายังใช้ได้และไม่มีรูปแตก
 - [ ] **Step 7: Commit** `feat(web): full-screen hero with floating search`
@@ -204,7 +204,7 @@ Photorealistic architectural exterior photograph of a fictional luxury high-rise
 ### Task 10 (🧑 ผู้ใช้): ภาพใหม่
 
 - [ ] ผู้ใช้เจนภาพตาม prompt ข้างต้น วางที่ `E:\project\condoscope-images\exterior\`
-- [ ] Claude แปลงเป็น `apps/web/public/images/projects/<slug>-hero.webp` (1920 กว้าง) และ `-hero-sm.webp` (960 กว้าง) และ `home-hero.*` ด้วยเครื่องมือครั้งเดียว (ไม่เพิ่ม dependency) ตรวจน้ำหนัก ดูภาพทุกภาพว่าไม่มีคน/ตัวหนังสือ/ลายน้ำ แล้ว commit `feat(web): luxury exterior imagery`
+- [ ] Claude แปลงเป็น `apps/web/public/images/projects/<slug>-hero.webp` (1376 กว้าง ขนาดเดิมของภาพที่ผู้ใช้ส่ง ห้ามขยาย) และ `-hero-sm.webp` (960 กว้าง) และ `home-hero.*` ด้วยเครื่องมือครั้งเดียว (ไม่เพิ่ม dependency) ตรวจน้ำหนัก ดูภาพทุกภาพว่าไม่มีคน/ตัวหนังสือ/ลายน้ำ แล้ว commit `feat(web): luxury exterior imagery`
 - [ ] ถ่ายภาพหน้าจอใหม่ (Task 9 Step 3) อีกรอบ — **แผนนี้ถือว่าเสร็จเมื่อขั้นนี้ผ่านเท่านั้น**
 
 ## Self-review (ตรวจเทียบคำสั่งแล้ว)

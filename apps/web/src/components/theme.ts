@@ -23,3 +23,7 @@ export const PAIRS: { name: string; fg: string; bg: string; min: number }[] = [
   { name: 'soft champagne on ink', fg: THEME.champagneSoft, bg: THEME.ink, min: 4.5 },
   { name: 'ink on champagne (button)', fg: THEME.ink, bg: THEME.champagne, min: 4.5 },
 ];
+
+/** Dark gradient under text that sits on a photo. The photo may be white, so the weakest alpha is what the contrast test checks. */
+export const SCRIM = { top: 0.25, mid: 0.6, bottom: 0.75 } as const;
+export const scrimBackground = `linear-gradient(to top, rgb(0 0 0 / ${SCRIM.bottom}), rgb(0 0 0 / ${SCRIM.mid}) 60%, rgb(0 0 0 / ${SCRIM.top}))`;

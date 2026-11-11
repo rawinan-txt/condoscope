@@ -85,6 +85,27 @@ describe('HomePage', () => {
     expect(searchQuery().get('q')).toBe('อ่อนนุช');
   });
 
+  it('keeps district and minimum price inside a closed "ตัวกรองเพิ่มเติม" section, and still sends them', async () => {
+    await openHome();
+    const more = screen.getByText('ตัวกรองเพิ่มเติม').closest('details')!;
+    expect(more).not.toHaveAttribute('open');
+    expect(more).toContainElement(screen.getByLabelText('เขต'));
+    expect(more).toContainElement(screen.getByLabelText('ราคาต่ำสุด'));
+    expect(more).not.toContainElement(screen.getByLabelText('ราคาสูงสุด'));
+    await userEvent.selectOptions(screen.getByLabelText('จังหวัด'), 'นนทบุรี');
+    await userEvent.selectOptions(screen.getByLabelText('เขต'), 'เมืองนนทบุรี');
+    await userEvent.selectOptions(screen.getByLabelText('ราคาต่ำสุด'), '2000000');
+    await userEvent.click(screen.getByRole('button', { name: 'ค้นหา' }));
+    expect(Object.fromEntries(searchQuery())).toEqual({ province: 'นนทบุรี', district: 'เมืองนนทบุรี', minPrice: '2000000' });
+  });
+
+  it('the hero image is decorative, loaded with priority and the heading is a serif h1', async () => {
+    await openHome();
+    const hero = screen.getByRole('heading', { level: 1 }).closest('section')!;
+    expect(hero.querySelector('img')).toHaveAttribute('alt', '');
+    expect(hero.querySelector('img')).toHaveAttribute('fetchpriority', 'high');
+  });
+
   it('shows a retry when the projects cannot be loaded', async () => {
     vi.mocked(searchProjects).mockRejectedValueOnce(new Error('down'));
     render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);

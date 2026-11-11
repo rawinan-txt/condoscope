@@ -123,3 +123,27 @@ test('ภาพโครงการและภาพห้องมาจา�
   expect(bad).toEqual([]);
   expect(data.projects).toHaveLength(5);
 });
+
+for (const [w, h] of [[390, 844], [320, 640]]) {
+  test(`หน้าแรกบนจอ ${w}×${h}: ช่องค้นหาและปุ่มอยู่ในจอแรก ไม่มีเลื่อนแนวนอน`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('');
+    const box = page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' });
+    await expect(box).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'ค้นหา' })).toBeAttached();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
+}
+
+test('ภาพ Hero โหลดไม่ได้: ช่องค้นหายังใช้ได้ และไม่มีภาพแตก', async ({ page }) => {
+  await page.route(/-hero(-sm)?\.webp/, (r) => r.abort());
+  await page.route(/images\/projects\/[a-z-]+\.jpg/, (r) => r.abort());
+  await page.goto('');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' }).fill('อารีย์');
+  await page.getByRole('button', { name: 'ค้นหา' }).click();
+  await expect(page).toHaveURL(/#\/search\?q=/);
+  await page.goto('');
+  const broken = await page.evaluate(() => [...document.querySelectorAll('section img')].filter((i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth === 0 && i.getAttribute('alt') === '').length);
+  expect(broken).toBe(0);
+});

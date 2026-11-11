@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { contrastRatio } from '../lib/contrast';
-import { PAIRS, THEME } from './theme';
+import { compositeOver, contrastRatio } from '../lib/contrast';
+import { PAIRS, SCRIM, THEME } from './theme';
 
 describe('site theme', () => {
   for (const p of PAIRS) it(`${p.name} reaches ${p.min}:1`, () => expect(contrastRatio(p.fg, p.bg)).toBeGreaterThanOrEqual(p.min));
@@ -24,5 +24,9 @@ describe('site theme', () => {
   it('the serif font has a system fallback that covers Thai', () => {
     const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
     expect(css).toMatch(/--font-serif:\s*'Noto Serif Thai',[^;]*serif;/);
+  });
+
+  it('white text over the scrim is readable even on a pure white photo', () => {
+    expect(contrastRatio('#ffffff', compositeOver('#000000', SCRIM.mid, '#ffffff'))).toBeGreaterThanOrEqual(4.5);
   });
 });
