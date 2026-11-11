@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react';
 import { createContext, useContext, useState } from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
 import type { Source } from '../services/api';
 import Footer from './Footer';
 import Navbar from './Navbar';
@@ -11,9 +11,12 @@ export const useReportSource = () => useContext(DataSourceContext);
 
 export default function Layout() {
   const [source, setSource] = useState<Source | null>(null);
+  // the explorer is one screen tall (header + building); the footer sits just below the fold
+  const fullBleed = useLocation().pathname.startsWith('/explorer/');
   return (
     <DataSourceContext.Provider value={setSource}>
       <div className="flex min-h-full flex-col">
+        <div data-screen className={fullBleed ? 'flex h-dvh flex-col' : 'contents'}>
         <Navbar />
         {source === 'fallback' && (
           <div role="status" className="border-b border-amber-200 bg-amber-50">
@@ -23,9 +26,10 @@ export default function Layout() {
             </p>
           </div>
         )}
-        <main className="flex-1">
+        <main className={fullBleed ? 'min-h-0 flex-1 overflow-auto' : 'flex-1'} data-full-bleed={fullBleed ? 'true' : undefined}>
           <Outlet />
         </main>
+        </div>
         <Footer />
       </div>
     </DataSourceContext.Provider>
