@@ -42,3 +42,11 @@ header :focus-visible, footer :focus-visible { outline-color: var(--color-champa
 .glass ::placeholder { color: #cbd5e1; }
 .glass .glass-accent { background: #2563eb; color: #fff; }
 .glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #2563eb; }
+
+/* Slow, one-shot motion. Only when the person has not asked for less motion, so content can never stay invisible. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; translate: 0 16px; transition: opacity 700ms ease-out, translate 700ms ease-out; }
+  .reveal[data-revealed] { opacity: 1; translate: 0 0; }
+  @keyframes hero-settle { from { scale: 1.06; } to { scale: 1; } }
+  .hero-settle { animation: hero-settle 5s ease-out both; }
+}
