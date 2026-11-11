@@ -1,12 +1,13 @@
-import { floorBaseY, type Building, type UnitView } from '@condoscope/shared';
+import { buildingWidth, type UnitView } from '@condoscope/shared';
 import { Environment, OrbitControls, PerformanceMonitor } from '@react-three/drei';
 import { Bloom, EffectComposer, SSAO } from '@react-three/postprocessing';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3, type Camera } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import City from './scene/City';
-import { homeView, projectBounds, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
+import City, { type FloorFocus } from './scene/City';
+import { floorViewGoal, freeWidthFraction, homeView, isCovered, projectBounds, stepCamera, towerBox, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
 import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
@@ -16,17 +17,19 @@ import UnitTooltip from './UnitTooltip';
 import type { CutFloor, ExplorerApi } from './useExplorer';
 
 declare global {
-  interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null } }
+  interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null; cameraBusy(): boolean } }
 }
 
-export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUnavailable(): void }) {
+export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi; time: TimeOfDay; onUnavailable(): void }) {
   const bounds = useMemo(() => projectBounds(x.buildings), [x.buildings]);
   const home = useMemo(() => homeView(bounds), [bounds]);
   const wrap = useRef<HTMLDivElement>(null);
+  // leaving the 3D view (switching to 2D) releases the GL context, which fires webglcontextlost: that is not "WebGL is unavailable"
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
   const [tipAt, setTipAt] = useState<{ left: number; top: number } | null>(null);
   const coarse = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
   const [low, setLow] = useState(coarse); // phones start in low quality; desktops drop to it when FPS stays < 40
-  const [time, setTime] = useState<TimeOfDay>('dusk');
   useEffect(() => { uNight.value = time === 'dusk' ? 1 : 0; }, [time]);
   const hovered = x.unit(x.hoveredId);
 
@@ -39,25 +42,19 @@ export default function Building3D({ x, onUnavailable }: { x: ExplorerApi; onUna
   useEffect(() => () => { document.body.style.cursor = ''; }, []);
 
   return (
-    <div ref={wrap} className="relative h-full w-full overflow-hidden rounded-lg" style={{ background: LOOK[time].bg }}>
+    <div ref={wrap} className="relative h-full w-full overflow-hidden" style={{ background: LOOK[time].bg }}>
       <Canvas
         shadows="percentage"
         dpr={[1, low ? 1.25 : 2]}
         camera={{ fov: 38, near: 1, far: 5000, position: home.position }}
         gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, powerPreference: 'high-performance' }}
-        onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onUnavailable(); })}
+        onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); if (alive.current) onUnavailable(); })}
         onPointerMissed={() => x.hover(null)}
+        role="img"
         aria-label="ตึก 3 มิติ ลากเพื่อหมุน เลื่อนล้อเพื่อซูม"
       >
         <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => setLow(true)} />
       </Canvas>
-      <div className="absolute right-2 top-2 flex rounded-md bg-white/90 p-0.5 text-sm shadow" role="group" aria-label="ช่วงเวลา">
-        {(['dusk', 'day'] as const).map((t) => (
-          <button key={t} type="button" aria-pressed={time === t} onClick={() => setTime(t)} className={`rounded px-2.5 py-1 ${time === t ? 'bg-accent text-white' : 'hover:bg-slate-100'}`}>
-            {t === 'dusk' ? 'พลบค่ำ' : 'กลางวัน'}
-          </button>
-        ))}
-      </div>
       {hovered && tipAt && <UnitTooltip unit={hovered} mine={x.mine} left={tipAt.left} top={tipAt.top} />}
     </div>
   );
@@ -71,6 +68,21 @@ interface SceneProps {
 
 function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
   const unitsRef = useRef<InstancedMesh>(null);
+  const busy = useRef(false); // the camera is still gliding to a goal (test hook)
+  const reduced = useReducedMotion();
+  const { size } = useThree();
+  const aspect = size.width / Math.max(1, size.height);
+  // the view for "see the whole floor": used by the camera and to find the blocks that hide the floor
+  const { cutFloor, buildings } = x;
+  const floorGoal = useMemo<FloorFocus | null>(() => {
+    if (!cutFloor) return null;
+    const b = buildings.find((v) => v.id === cutFloor.building_id)!;
+    // fit the floor into the part of the screen the floating panels leave free
+    const panels = [...document.querySelectorAll('.glass')].map((el) => el.getBoundingClientRect());
+    const neighbours = buildings.filter((o) => o.id !== b.id).map(towerBox); // other towers of the project must not hide the floor
+    const g = floorViewGoal(b, cutFloor.floor, aspect, freeWidthFraction(size.width, panels), neighbours);
+    return { camera: new Vector3(...g.position), target: new Vector3(...g.target), clearance: Math.hypot(buildingWidth(b), b.footprint_depth_m) / 2 };
+  }, [cutFloor, buildings, aspect, size.width]);
   const seed = x.buildings[0].project_id * 7919;
   const look = LOOK[time];
   return (
@@ -101,10 +113,10 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
       />
       <Site r={bounds} seed={seed} />
       <Landscape r={bounds} seed={seed} time={time} />
-      <City r={bounds} seed={seed} time={time} />
+      <City r={bounds} seed={seed} time={time} focus={floorGoal} reducedMotion={reduced} />
       <Towers x={x} unitsRef={unitsRef} onHover={onHover} onPick={(u) => x.select(u.id)} />
-      <CameraRig x={x} home={home} bounds={bounds} unitsRef={unitsRef} />
-      <Probe x={x} unitsRef={unitsRef} />
+      <CameraRig x={x} home={home} bounds={bounds} unitsRef={unitsRef} floorGoal={floorGoal} reduced={reduced} busy={busy} />
+      <Probe x={x} unitsRef={unitsRef} busy={busy} />
       {low ? (
         <EffectComposer key="low" multisampling={0}>
           <Bloom intensity={time === 'dusk' ? 0.7 : 0.25} luminanceThreshold={0.85} luminanceSmoothing={0.3} mipmapBlur />
@@ -120,30 +132,36 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
 }
 
 /** Orbit controls plus a smooth move to the home view or to a cut floor. Stops as soon as the user drags. */
-function CameraRig({ x, home, bounds, unitsRef }: { x: ExplorerApi; home: { position: Vec3; target: Vec3 }; bounds: Bounds; unitsRef: React.RefObject<InstancedMesh | null> }) {
+function CameraRig({ x, home, bounds, unitsRef, floorGoal, reduced, busy }: {
+  x: ExplorerApi; home: { position: Vec3; target: Vec3 }; bounds: Bounds; unitsRef: React.RefObject<InstancedMesh | null>;
+  floorGoal: FloorFocus | null; reduced: boolean; busy: React.MutableRefObject<boolean>;
+}) {
   const controls = useRef<OrbitControlsImpl>(null);
   const goal = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
   const { camera, gl } = useThree();
 
-  const { cutFloor, buildings, selectedId } = x;
-  useEffect(() => { goal.current = viewFor(cutFloor, buildings, home); }, [cutFloor, buildings, home]);
+  const { selectedId } = x;
+  useEffect(() => {
+    goal.current = floorGoal ? { pos: floorGoal.camera.clone(), target: floorGoal.target.clone() } : { pos: new Vector3(...home.position), target: new Vector3(...home.target) };
+    busy.current = true;
+  }, [floorGoal, home, busy]);
   // a unit picked from the list or keyboard may be out of sight (e.g. back facade): bring it into view
   useEffect(() => {
     if (selectedId === null || screenPoint(x, selectedId, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 0)) return;
     const u = x.unit(selectedId)!;
     const v = unitViewGoal(x.buildings.find((b) => b.id === u.building_id)!, u);
     goal.current = { pos: new Vector3(...v.position), target: new Vector3(...v.target) };
+    busy.current = true;
   }, [selectedId]); // only a new selection should move the camera, not every re-render
 
   useFrame((_, dt) => {
     const g = goal.current;
     const c = controls.current;
+    busy.current = g !== null;
     if (!g || !c) return;
-    const k = 1 - Math.exp(-dt * 4);
-    camera.position.lerp(g.pos, k);
-    c.target.lerp(g.target, k);
+    const { done } = stepCamera(camera.position, c.target, g, dt, reduced);
     c.update();
-    if (camera.position.distanceTo(g.pos) < 0.5) goal.current = null;
+    if (done) { goal.current = null; busy.current = false; }
   });
 
   return (
@@ -161,17 +179,9 @@ function CameraRig({ x, home, bounds, unitsRef }: { x: ExplorerApi; home: { posi
   );
 }
 
-function viewFor(cut: CutFloor, buildings: Building[], home: { position: Vec3; target: Vec3 }) {
-  if (!cut) return { pos: new Vector3(...home.position), target: new Vector3(...home.target) };
-  const b = buildings.find((v) => v.id === cut.building_id)!;
-  const y = floorBaseY(b, cut.floor) + b.floor_height_m;
-  const center = new Vector3(0, y, 0).applyMatrix4(towerMatrix(b));
-  return { pos: center.clone().add(new Vector3(18, 55, 38)), target: center };
-}
-
 /**
- * Screen position of a unit centre, or null when it is off screen, on a cut-away floor or hidden behind
- * another unit. With px > 0 the unit must also cover px pixels around its centre (so a click cannot land on a neighbour).
+ * Screen position of a unit centre, or null when it is off screen, on a cut-away floor, hidden behind
+ * another unit or under a floating panel. With px > 0 the unit must also cover px pixels around its centre (so a click cannot land on a neighbour).
  */
 function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, camera: Camera, rect: DOMRect, px: number) {
   const u = x.unit(id);
@@ -185,15 +195,18 @@ function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, cam
     const hit = ray.intersectObject(mesh).find((h) => h.instanceId !== undefined && x.isVisible(x.units[h.instanceId]));
     if (!hit || x.units[hit.instanceId!].id !== id) return null;
   }
-  return { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height };
+  const point = { x: rect.left + ((ndc.x + 1) / 2) * rect.width, y: rect.top + ((1 - ndc.y) / 2) * rect.height };
+  // a room under a floating panel cannot be seen or clicked, so it does not count as visible (the camera then turns to it)
+  const panels = [...document.querySelectorAll('.glass')].map((el) => el.getBoundingClientRect());
+  return isCovered(point.x, point.y, panels, 6) ? null : point;
 }
 
 /** Test hook used by the Playwright success-criterion test. */
-function Probe({ x, unitsRef }: { x: ExplorerApi; unitsRef: React.RefObject<InstancedMesh | null> }) {
+function Probe({ x, unitsRef, busy }: { x: ExplorerApi; unitsRef: React.RefObject<InstancedMesh | null>; busy: React.MutableRefObject<boolean> }) {
   const { camera, gl } = useThree();
   useEffect(() => {
-    window.__condoscope = { projectUnit: (id) => screenPoint(x, id, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 3) };
+    window.__condoscope = { projectUnit: (id) => screenPoint(x, id, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 3), cameraBusy: () => busy.current };
     return () => { delete window.__condoscope; };
-  }, [x, camera, gl, unitsRef]);
+  }, [x, camera, gl, unitsRef, busy]);
   return null;
 }

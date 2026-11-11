@@ -15,3 +15,20 @@ body { @apply bg-white text-slate-900 antialiased; }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 .fade-in { animation: fade-in 200ms ease-out; }
+
+/* Dark glass panels over the 3D scene. Colours are mirrored in components/glass.ts and checked for contrast in lib/contrast.test.ts. */
+.glass {
+  background: rgb(15 23 42 / 0.82);
+  color: #f8fafc;
+  border: 1px solid rgb(255 255 255 / 0.15);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+@media (min-width: 48rem) {
+  @media (prefers-reduced-motion: no-preference) { .glass { backdrop-filter: blur(10px); } }
+}
+.glass a { color: #7dd3fc; }
+.glass .glass-muted { color: #cbd5e1; }
+.glass select, .glass input:not([type='checkbox']) { background: #1e293b; color: #f8fafc; border-color: rgb(255 255 255 / 0.3); }
+.glass ::placeholder { color: #cbd5e1; }
+.glass .glass-accent { background: #2563eb; color: #fff; }
+.glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #2563eb; }

@@ -1,11 +1,11 @@
 import { mulberry32 } from '@condoscope/shared';
 import { useFrame } from '@react-three/fiber';
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AdditiveBlending, BoxGeometry, CanvasTexture, Color, Matrix4, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry,
   Quaternion, RepeatWrapping, SphereGeometry, SRGBColorSpace, Vector3,
 } from 'three';
-import type { Bounds } from './layout';
+import { occludesFloorView, type Bounds } from './layout';
 import { uNight, type TimeOfDay } from './time';
 
 const BOX = new BoxGeometry(1, 1, 1);
@@ -52,8 +52,15 @@ function streakTexture(rng: () => number, a: string, b: string) {
   return t;
 }
 
-/** Surrounding city, roads with moving car lights and an elevated expressway, laid out around the project bounds. */
-export default memo(function City({ r, seed, time }: { r: Bounds; seed: number; time: TimeOfDay }) {
+export interface FloorFocus { camera: Vector3; target: Vector3; clearance: number }
+const NONE: ReadonlySet<number> = new Set();
+const FADED_OPACITY = 0.12;
+
+/**
+ * Surrounding city, roads with moving car lights and an elevated expressway, laid out around the project bounds.
+ * While a floor is in focus the blocks between the camera and that floor fade out (and fade back afterwards).
+ */
+export default memo(function City({ r, seed, time, focus, reducedMotion }: { r: Bounds; seed: number; time: TimeOfDay; focus: FloorFocus | null; reducedMotion: boolean }) {
   const cx = (r.minX + r.maxX) / 2;
   const roadZ = r.maxZ + 22;
   const roadX = r.maxX + 24;
@@ -94,8 +101,29 @@ export default memo(function City({ r, seed, time }: { r: Bounds; seed: number; 
   }, [seed, cx, r, roadZ, roadX, exX]);
 
   const strip = useMemo(() => new PlaneGeometry(5, 3000).rotateX(-Math.PI / 2), []);
+
+  // blocks that hide the focused floor, drawn with a see-through material; kept until they have faded back in
+  const boxes = useMemo(() => blocks.map((m) => {
+    const p = new Vector3().setFromMatrixPosition(m), sc = new Vector3().setFromMatrixScale(m).multiplyScalar(0.5);
+    return { min: p.clone().sub(sc), max: p.clone().add(sc) };
+  }), [blocks]);
+  const hiding = useMemo(() => (focus ? new Set(boxes.flatMap((b, i) => (occludesFloorView(focus.camera, focus.target, b, focus.clearance) ? [i] : []))) : NONE), [boxes, focus]);
+  const [faded, setFaded] = useState<ReadonlySet<number>>(NONE);
+  useEffect(() => { if (hiding.size) setFaded(hiding); }, [hiding]);
+  const opacity = useRef(1);
+  const ghostMat = useMemo(() => {
+    const m = new MeshStandardMaterial({ color: 0x6f757d, roughness: 0.85, transparent: true, depthWrite: false });
+    m.onBeforeCompile = cityMat.onBeforeCompile; // same window grid
+    return m;
+  }, []);
+  const { solid, ghost } = useMemo(() => ({ solid: blocks.filter((_, i) => !faded.has(i)), ghost: blocks.filter((_, i) => faded.has(i)) }), [blocks, faded]);
+
   useFrame((_, dt) => {
     for (const s of streaks) { s.mat.map!.offset.y += s.speed * dt * 10; s.mat.opacity = 0.3 + 0.7 * uNight.value; }
+    const goal = focus ? FADED_OPACITY : 1;
+    opacity.current = reducedMotion ? goal : opacity.current + (goal - opacity.current) * (1 - Math.exp(-dt * 6));
+    ghostMat.opacity = opacity.current;
+    if (!focus && faded.size && opacity.current > 0.99) setFaded(NONE);
   });
 
   const fill = (list: Matrix4[]) => (m: import('three').InstancedMesh | null) => {
@@ -107,7 +135,8 @@ export default memo(function City({ r, seed, time }: { r: Bounds; seed: number; 
 
   return (
     <group>
-      <instancedMesh args={[BOX, cityMat, blocks.length]} ref={fill(blocks)} castShadow receiveShadow />
+      <instancedMesh key={`solid-${solid.length}`} args={[BOX, cityMat, solid.length]} ref={fill(solid)} castShadow receiveShadow />
+      {ghost.length > 0 && <instancedMesh key={`ghost-${ghost.length}`} args={[BOX, ghostMat, ghost.length]} ref={fill(ghost)} receiveShadow />}
       <mesh geometry={BOX} material={roadMat} position={[cx, 0.11, roadZ]} scale={[3000, 0.22, 18]} receiveShadow />
       <mesh geometry={BOX} material={roadMat} position={[roadX, 0.11, 0]} scale={[16, 0.22, 3000]} receiveShadow />
       <mesh geometry={BOX} material={exMat} position={[exX, exY, 0]} scale={[28, 1.6, 3000]} castShadow receiveShadow />
