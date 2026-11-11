@@ -4,7 +4,7 @@
 
 > **ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง** ชื่อโครงการทั้งหมดเป็นชื่อสมมติ ภาพภายในห้องเป็นภาพประกอบสร้างด้วย AI และแปลนเป็นแปลนจำลองตามประเภทห้อง ไม่ใช่ของโครงการจริง
 
-**ลิงก์เดโม:** ยังไม่ deploy
+**ลิงก์เดโม:** [rawinan-txt.github.io/condoscope](https://rawinan-txt.github.io/condoscope/) · API: <https://condoscope-api.rawinanbunsai.workers.dev> (ลองเรียก [`/api/health`](https://condoscope-api.rawinanbunsai.workers.dev/api/health))
 
 ## ภาพรวม
 
