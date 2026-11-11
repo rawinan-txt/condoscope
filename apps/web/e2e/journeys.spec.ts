@@ -42,6 +42,10 @@ test('แผนที่: หมุด 5 ตัว กด Enter เปิด pop
   await expect(markers).toHaveCount(5);
   await markers.first().focus();
   await page.keyboard.press('Enter');
+  // decided with the owner: a pin leads to the project page (which has the button into the explorer), never straight to the explorer
+  const popup = page.locator('.maplibregl-popup');
+  await expect(popup.getByRole('link')).toHaveCount(1);
+  await expect(popup.getByRole('link', { name: 'ดูโครงการ' })).toHaveAttribute('href', /^#\/project\/\d+$/);
   await page.getByRole('link', { name: 'ดูโครงการ' }).click();
   await expect(page).toHaveURL(/#\/project\/\d+$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
