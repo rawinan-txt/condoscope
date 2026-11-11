@@ -2,13 +2,22 @@
 
 @theme {
   --font-sans: 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
+  --font-serif: 'Noto Serif Thai', 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --color-ink: #14120f;
+  --color-ivory: #f6f2ea;
+  --color-stone: #5c554b;
+  --color-bronze: #7a5a22;
+  --color-champagne: #c8a96b;
+  --color-champagne-soft: #e2cc9a;
+  --color-ink-muted: #bdb5a6;
+  --color-accent: #14120f;
+  --color-accent-hover: #2b2620;
 }
 
 html, body, #root { height: 100%; }
-body { @apply bg-white text-slate-900 antialiased; }
+body { @apply bg-ivory text-ink antialiased; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+h1 { font-family: var(--font-serif); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
