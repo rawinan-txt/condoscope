@@ -5,8 +5,9 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh, Raycaster, Vector2, Vector3, type Camera } from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import City from './scene/City';
-import { homeView, isCovered, projectBounds, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import { homeView, isCovered, projectBounds, stepCamera, towerMatrix, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
 import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
@@ -46,6 +47,7 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
         gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => gl.domElement.addEventListener('webglcontextlost', (e) => { e.preventDefault(); onUnavailable(); })}
         onPointerMissed={() => x.hover(null)}
+        role="img"
         aria-label="ตึก 3 มิติ ลากเพื่อหมุน เลื่อนล้อเพื่อซูม"
       >
         <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => setLow(true)} />
@@ -116,6 +118,7 @@ function CameraRig({ x, home, bounds, unitsRef }: { x: ExplorerApi; home: { posi
   const controls = useRef<OrbitControlsImpl>(null);
   const goal = useRef<{ pos: Vector3; target: Vector3 } | null>(null);
   const { camera, gl } = useThree();
+  const reduced = useReducedMotion(); // jump to the goal instead of gliding
 
   const { cutFloor, buildings, selectedId } = x;
   useEffect(() => { goal.current = viewFor(cutFloor, buildings, home); }, [cutFloor, buildings, home]);
@@ -131,11 +134,9 @@ function CameraRig({ x, home, bounds, unitsRef }: { x: ExplorerApi; home: { posi
     const g = goal.current;
     const c = controls.current;
     if (!g || !c) return;
-    const k = 1 - Math.exp(-dt * 4);
-    camera.position.lerp(g.pos, k);
-    c.target.lerp(g.target, k);
+    const { done } = stepCamera(camera.position, c.target, g, dt, reduced);
     c.update();
-    if (camera.position.distanceTo(g.pos) < 0.5) goal.current = null;
+    if (done) goal.current = null;
   });
 
   return (

@@ -11,6 +11,7 @@ import BottomSheet from './BottomSheet';
 import BuildingView from './BuildingView';
 import ExplorerTabs from './ExplorerTabs';
 import Legend from './Legend';
+import LiveAnnouncer from './LiveAnnouncer';
 import UnitPanel from './UnitPanel';
 import { useExplorer } from './useExplorer';
 
@@ -56,6 +57,7 @@ function Explorer({ payload }: { payload: ExplorerPayload }) {
   if (!desktop) {
     return (
       <div className="relative h-full">
+        <LiveAnnouncer x={x} />
         <BuildingView x={x} header={header} footer={null} />
         <BottomSheet x={x} legend={<Legend />} />
       </div>
@@ -63,6 +65,7 @@ function Explorer({ payload }: { payload: ExplorerPayload }) {
   }
   return (
     <div className="relative h-full">
+      <LiveAnnouncer x={x} />
       <BuildingView x={x} header={header} footer={legend} />
       <div className="pointer-events-none absolute inset-y-3 right-3 flex w-[min(22.5rem,calc(100%-1.5rem))] flex-col items-end gap-3 overflow-y-auto md:inset-y-4 md:right-4">
         <button

@@ -64,3 +64,19 @@ export interface Box2D { left: number; top: number; right: number; bottom: numbe
 export function isCovered(px: number, py: number, panels: Box2D[], margin = 0): boolean {
   return panels.some((r) => px >= r.left - margin && px <= r.right + margin && py >= r.top - margin && py <= r.bottom + margin);
 }
+
+/**
+ * One frame of the glide of the camera to a goal. Moves `pos` and `target` in place and says whether it has arrived.
+ * With reduced motion it jumps straight to the goal instead of gliding.
+ */
+export function stepCamera(pos: Vector3, target: Vector3, goal: { pos: Vector3; target: Vector3 }, dt: number, reducedMotion: boolean): { done: boolean } {
+  if (reducedMotion) {
+    pos.copy(goal.pos);
+    target.copy(goal.target);
+    return { done: true };
+  }
+  const k = 1 - Math.exp(-dt * 4);
+  pos.lerp(goal.pos, k);
+  target.lerp(goal.target, k);
+  return { done: pos.distanceTo(goal.pos) < 0.5 };
+}

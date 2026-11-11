@@ -1,7 +1,8 @@
 import { buildingWidth, unitBox, type ExplorerPayload } from '@condoscope/shared';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { getExplorer } from '../../../services/api';
-import { homeView, isCovered, projectBounds, unitViewGoal, unitWorldCenter } from './layout';
+import { Vector3 } from 'three';
+import { homeView, isCovered, projectBounds, stepCamera, unitViewGoal, unitWorldCenter } from './layout';
 
 let ari: ExplorerPayload;
 let onNut: ExplorerPayload;
@@ -75,5 +76,36 @@ describe('isCovered (units under the floating panels count as hidden)', () => {
     expect(isCovered(305, 100, panels, 8)).toBe(true); // 5 px outside the panel, inside the margin
     expect(isCovered(320, 100, panels, 8)).toBe(false);
     expect(isCovered(305, 100, panels)).toBe(false);
+  });
+});
+
+describe('stepCamera (the glide to a goal)', () => {
+  const goal = { pos: new Vector3(100, 50, 100), target: new Vector3(0, 30, 0) };
+  const start = () => ({ pos: new Vector3(0, 10, 200), target: new Vector3(0, 0, 0) });
+
+  it('moves part of the way each frame and keeps going', () => {
+    const cam = start();
+    const r = stepCamera(cam.pos, cam.target, goal, 0.016, false);
+    expect(r.done).toBe(false);
+    expect(cam.pos.x).toBeGreaterThan(0);
+    expect(cam.pos.x).toBeLessThan(100);
+    expect(cam.target.y).toBeGreaterThan(0);
+    expect(cam.target.y).toBeLessThan(30);
+  });
+
+  it('arrives after enough frames', () => {
+    const cam = start();
+    let done = false;
+    for (let i = 0; i < 600 && !done; i++) done = stepCamera(cam.pos, cam.target, goal, 0.016, false).done;
+    expect(done).toBe(true);
+    expect(cam.pos.distanceTo(goal.pos)).toBeLessThan(1);
+  });
+
+  it('with reduced motion jumps straight to the goal in one frame', () => {
+    const cam = start();
+    const r = stepCamera(cam.pos, cam.target, goal, 0.016, true);
+    expect(r.done).toBe(true);
+    expect(cam.pos.equals(goal.pos)).toBe(true);
+    expect(cam.target.equals(goal.target)).toBe(true);
   });
 });

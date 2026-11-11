@@ -50,23 +50,7 @@ export default function BuildingView({ x, header, footer }: { x: ExplorerApi; he
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-slate-100">
-      <div
-        className="absolute inset-0"
-        tabIndex={0}
-        onKeyDown={onKeyDown}
-        aria-label="เลือกห้องจากตึก ใช้ลูกศรเลื่อนไปห้องข้างๆ หรือชั้นบนล่าง Enter เปิดรายละเอียด Esc ยกเลิก"
-      >
-        {mode === '3d' ? (
-          <ThreeBoundary onError={lost} fallback={<BuildingSvg x={x} building={building} facade={facade} />}>
-            <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500">กำลังโหลดตึก 3D…</div>}>
-              <Building3D x={x} time={time} onUnavailable={lost} />
-            </Suspense>
-          </ThreeBoundary>
-        ) : (
-          <BuildingSvg x={x} building={building} facade={facade} />
-        )}
-      </div>
-      <div className="pointer-events-none absolute inset-y-3 left-3 flex w-[min(20rem,calc(100%-1.5rem))] flex-col justify-between gap-3 md:inset-y-4 md:left-4">
+      <div className="pointer-events-none absolute z-10 inset-y-3 left-3 flex w-[min(20rem,calc(100%-1.5rem))] flex-col justify-between gap-3 md:inset-y-4 md:left-4">
         <div className="space-y-3">
           {header}
           <OverlayPanel title="มุมมอง" className="space-y-2 p-2">
@@ -96,6 +80,23 @@ export default function BuildingView({ x, header, footer }: { x: ExplorerApi; he
           </OverlayPanel>
         </div>
         {footer}
+      </div>
+      <div
+        role="group"
+        className="absolute inset-0 outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-sky-300"
+        tabIndex={0}
+        onKeyDown={onKeyDown}
+        aria-label="เลือกห้องจากตึก ใช้ลูกศรเลื่อนไปห้องข้างๆ หรือชั้นบนล่าง Enter เปิดรายละเอียด Esc ยกเลิก"
+      >
+        {mode === '3d' ? (
+          <ThreeBoundary onError={lost} fallback={<BuildingSvg x={x} building={building} facade={facade} />}>
+            <Suspense fallback={<div className="flex h-full items-center justify-center text-slate-500">กำลังโหลดตึก 3D…</div>}>
+              <Building3D x={x} time={time} onUnavailable={lost} />
+            </Suspense>
+          </ThreeBoundary>
+        ) : (
+          <BuildingSvg x={x} building={building} facade={facade} />
+        )}
       </div>
     </div>
   );
