@@ -127,3 +127,41 @@ test('ห้องที่อยู่ใต้แผงลอยไม่ถ�
   expect(result.visible).toBeGreaterThan(20);
   expect(result.underPanel).toEqual([]);
 });
+
+const floorNo = (u: { floor_id: number }) => data.floors.find((f) => f.id === u.floor_id)!.floor_number;
+const unitById = (id: number) => data.units.find((u) => u.id === id)!;
+const cameraBusy = (page: import('@playwright/test').Page) => page.evaluate(() => window.__condoscope!.cameraBusy());
+
+test('ดูทั้งชั้น: กล้องไหลไปที่ชั้น ห้องบนชั้นนั้นยังเลือกได้ตรง ชั้นที่อยู่เหนือขึ้นไปถูกซ่อน', async ({ page }) => {
+  test.setTimeout(180_000); // software WebGL is slow: pick, glide to the floor, then probe every room of it
+  await open3D(page, 1);
+  const [u] = await visibleUnits(page, 1, 1);
+  await page.mouse.click(u.x, u.y);
+  const picked = unitById(u.id);
+  const floor = floorNo(picked);
+  await page.getByRole('button', { name: `ดูทั้งชั้น ${floor}` }).click();
+  expect(await cameraBusy(page)).toBe(true); // gliding, not jumping
+  await expect.poll(() => cameraBusy(page), { timeout: 60_000 }).toBe(false);
+
+  const sameFloor = data.units.filter((x) => x.building_id === picked.building_id && floorNo(x) === floor);
+  const above = data.units.filter((x) => x.building_id === picked.building_id && floorNo(x) === floor + 1);
+  const positions = await page.evaluate((ids) => ids.map((id) => window.__condoscope!.projectUnit(id)), sameFloor.map((x) => x.id));
+  const shown = sameFloor.filter((_, i) => positions[i]);
+  expect(shown.length, 'most of the floor can be seen and clicked').toBeGreaterThan(sameFloor.length * 0.4);
+  if (above.length) {
+    const hidden = await page.evaluate((ids) => ids.map((id) => window.__condoscope!.projectUnit(id)), above.map((x) => x.id));
+    expect(hidden.every((p) => p === null)).toBe(true);
+  }
+  const i = positions.findIndex(Boolean);
+  await page.mouse.click(positions[i]!.x, positions[i]!.y);
+  await expect(panelTitle(page)).toHaveText(`ห้อง ${sameFloor[i].unit_number}`);
+});
+
+test('ดูทั้งชั้น + ลดการเคลื่อนไหว: กล้องกระโดดไปทันที ไม่ไหล', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open3D(page, 1);
+  const [u] = await visibleUnits(page, 1, 1);
+  await page.mouse.click(u.x, u.y);
+  await page.getByRole('button', { name: `ดูทั้งชั้น ${floorNo(unitById(u.id))}` }).click();
+  await expect.poll(() => cameraBusy(page), { timeout: 5000 }).toBe(false); // a few frames, not the seconds a glide takes
+});
