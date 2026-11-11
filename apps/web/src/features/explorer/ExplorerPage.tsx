@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import NotFound, { LoadError } from '../../components/NotFound';
 import OverlayPanel from '../../components/OverlayPanel';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResource } from '../../hooks/useResource';
 import { getExplorer } from '../../services/api';
+import BottomSheet from './BottomSheet';
 import BuildingView from './BuildingView';
 import ExplorerTabs from './ExplorerTabs';
 import Legend from './Legend';
@@ -30,6 +32,7 @@ function Explorer({ payload }: { payload: ExplorerPayload }) {
   const x = useExplorer(payload);
   const [params] = useSearchParams();
   const [panelOpen, setPanelOpen] = useState(loadPanelOpen);
+  const desktop = useMediaQuery('(min-width: 768px)'); // side column on desktop, bottom sheet on a phone
   const preselect = Number(params.get('unit'));
   const { select } = x;
   useEffect(() => {
@@ -48,11 +51,19 @@ function Explorer({ payload }: { payload: ExplorerPayload }) {
       <p className="glass-muted text-sm">{project.neighborhood} · {project.province}</p>
     </OverlayPanel>
   );
-  const footer = <OverlayPanel title="สถานะห้อง" className="p-3"><Legend /></OverlayPanel>;
+  const legend = <OverlayPanel title="สถานะห้อง" className="p-3"><Legend /></OverlayPanel>;
 
+  if (!desktop) {
+    return (
+      <div className="relative h-full">
+        <BuildingView x={x} header={header} footer={null} />
+        <BottomSheet x={x} legend={<Legend />} />
+      </div>
+    );
+  }
   return (
     <div className="relative h-full">
-      <BuildingView x={x} header={header} footer={footer} />
+      <BuildingView x={x} header={header} footer={legend} />
       <div className="pointer-events-none absolute inset-y-3 right-3 flex w-[min(22.5rem,calc(100%-1.5rem))] flex-col items-end gap-3 overflow-y-auto md:inset-y-4 md:right-4">
         <button
           type="button"

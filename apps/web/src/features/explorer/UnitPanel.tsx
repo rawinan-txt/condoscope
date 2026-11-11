@@ -7,7 +7,7 @@ import { STATUS_STYLE } from './status';
 import type { ExplorerApi } from './useExplorer';
 
 /** Details of the selected room, shown in a floating panel. */
-export default function UnitPanel({ x }: { x: ExplorerApi }) {
+export default function UnitPanel({ x, bare = false }: { x: ExplorerApi; bare?: boolean }) {
   const u = x.unit(x.selectedId);
   if (!u) return null;
   const building = x.buildings.find((b) => b.id === u.building_id)!;
@@ -15,7 +15,7 @@ export default function UnitPanel({ x }: { x: ExplorerApi }) {
   const s = STATUS_STYLE[status];
 
   return (
-    <OverlayPanel title="รายละเอียดห้อง" className="p-4">
+    <OverlayPanel title="รายละเอียดห้อง" bare={bare} className={bare ? 'py-2' : 'p-4'}>
       <div className="flex items-start justify-between">
         <div>
           <p className="glass-muted text-xs">{building.name} · ชั้น {u.floor_number}</p>

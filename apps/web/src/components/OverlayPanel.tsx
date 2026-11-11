@@ -2,13 +2,14 @@ import { ChevronDown } from 'lucide-react';
 import { useId, useState, type ReactNode } from 'react';
 
 /** Translucent dark panel floating over the 3D scene. Collapsing really removes the content from the accessibility tree. */
-export default function OverlayPanel({ title, children, collapsible = false, defaultOpen = true, className = '' }: {
-  title: string; children: ReactNode; collapsible?: boolean; defaultOpen?: boolean; className?: string;
+/** `bare` keeps the labelled region but drops the glass look (for a panel that already sits on a glass surface). */
+export default function OverlayPanel({ title, children, collapsible = false, defaultOpen = true, bare = false, className = '' }: {
+  title: string; children: ReactNode; collapsible?: boolean; defaultOpen?: boolean; bare?: boolean; className?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
   return (
-    <section aria-label={title} className={`glass pointer-events-auto rounded-xl ${className}`}>
+    <section aria-label={title} className={`${bare ? '' : 'glass pointer-events-auto rounded-xl'} ${className}`}>
       {collapsible && (
         <button
           type="button"
