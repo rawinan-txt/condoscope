@@ -10,19 +10,19 @@ export const heroSrc = (thumbnailUrl: string) => ({
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 
-/** Decorative full-bleed project image. Missing big image -> old 3D thumbnail -> nothing (the dark page colour stays). Only the big (AI) image carries the AI badge. */
-export default function HeroImage({ project, priority = false, className = '' }: { project: Project; priority?: boolean; className?: string }) {
+export const projectHero = (p: Project) => (p.thumbnail_url ? { ...heroSrc(p.thumbnail_url), fallback: p.thumbnail_url } : null);
+
+/** Decorative full-bleed image. Missing big image -> `fallback` (the old 3D thumbnail, no AI badge) -> nothing (the dark page colour stays). Only the big (AI) image carries the AI badge. */
+export default function HeroImage({ src, srcSm, fallback, priority = false, className = '' }: { src: string; srcSm: string; fallback?: string; priority?: boolean; className?: string }) {
   const [stage, setStage] = useState<'hero' | 'thumb' | 'none'>('hero');
-  const thumb = project.thumbnail_url;
-  if (!thumb || stage === 'none') return null;
-  const big = heroSrc(thumb);
-  const common = { alt: '', className: `h-full w-full object-cover ${className}`, onError: () => setStage((s) => (s === 'hero' ? 'thumb' : 'none')) };
+  if (stage === 'none') return null;
+  const common = { alt: '', className: `h-full w-full object-cover ${className}`, onError: () => setStage((s) => (s === 'hero' && fallback ? 'thumb' : 'none')) };
   return (
     <>
       {stage === 'hero' ? (
-        <img {...common} src={asset(big.src)} srcSet={`${asset(big.srcSm)} 960w, ${asset(big.src)} 1376w`} sizes="100vw" {...(priority ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} />
+        <img {...common} src={asset(src)} srcSet={`${asset(srcSm)} 960w, ${asset(src)} 1376w`} sizes="100vw" {...(priority ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} />
       ) : (
-        <img {...common} src={asset(thumb)} />
+        <img {...common} src={asset(fallback!)} />
       )}
       {stage === 'hero' && <AiBadge />}
     </>

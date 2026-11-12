@@ -22,7 +22,6 @@ export default function Hero({ projects }: { projects: Project[] }) {
     () => [...new Set(projects.filter((p) => !form.province || p.province === form.province).map((p) => p.district))],
     [projects, form.province],
   );
-  const featured = projects.find((p) => p.is_featured) ?? projects[0];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +31,7 @@ export default function Hero({ projects }: { projects: Project[] }) {
 
   return (
     <section className="relative isolate flex min-h-[max(560px,calc(100svh-3.5rem))] flex-col justify-end overflow-hidden bg-ink">
-      {featured && <div className="absolute inset-0 -z-20 overflow-hidden"><HeroImage project={featured} priority className="hero-settle" /></div>}
+      <div className="absolute inset-0 -z-20 overflow-hidden"><HeroImage src="images/home-hero.webp" srcSm="images/home-hero-sm.webp" priority className="hero-settle" /></div>
       <div className="absolute inset-0 -z-10" style={{ background: scrimBackground }} aria-hidden />
       <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-24 md:pb-16">
         <h1 className="reveal max-w-3xl text-4xl font-semibold leading-tight text-white md:text-6xl" ref={reveal}>ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย</h1>

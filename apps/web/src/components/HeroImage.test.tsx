@@ -1,7 +1,7 @@
 import type { Project } from '@condoscope/shared';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import HeroImage, { heroSrc } from './HeroImage';
+import HeroImage, { heroSrc, projectHero } from './HeroImage';
 
 const project = { id: 1, name: 'Noventa Ari', thumbnail_url: 'images/projects/noventa-ari.jpg' } as Project;
 
@@ -15,7 +15,7 @@ describe('HeroImage', () => {
   const img = () => document.querySelector('img');
 
   it('shows the big image with the AI badge, high priority and no lazy loading', () => {
-    render(<HeroImage project={project} priority />);
+    render(<HeroImage {...projectHero(project)!} priority />);
     expect(img()!.getAttribute('src')).toContain('noventa-ari-hero.webp');
     expect(img()).toHaveAttribute('fetchpriority', 'high');
     expect(img()).not.toHaveAttribute('loading', 'lazy');
@@ -23,7 +23,7 @@ describe('HeroImage', () => {
   });
 
   it('falls back to the old thumbnail (no AI badge), then to nothing, never a broken image', () => {
-    render(<HeroImage project={project} />);
+    render(<HeroImage {...projectHero(project)!} />);
     fireEvent.error(img()!);
     expect(img()!.getAttribute('src')).toContain('noventa-ari.jpg');
     expect(screen.queryByText('ภาพประกอบสร้างด้วย AI')).toBeNull();
@@ -31,8 +31,14 @@ describe('HeroImage', () => {
     expect(img()).toBeNull();
   });
 
-  it('renders nothing for a project without an image', () => {
-    render(<HeroImage project={{ ...project, thumbnail_url: null }} />);
+  it('projectHero is null for a project without an image', () => {
+    expect(projectHero({ ...project, thumbnail_url: null })).toBeNull();
+  });
+
+  it('without a fallback a missing big image leaves nothing (no broken image)', () => {
+    render(<HeroImage src="images/home-hero.webp" srcSm="images/home-hero-sm.webp" />);
+    expect(img()!.getAttribute('srcset')).toContain('home-hero-sm.webp 960w');
+    fireEvent.error(img()!);
     expect(img()).toBeNull();
   });
 });
