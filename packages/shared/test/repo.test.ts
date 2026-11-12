@@ -107,8 +107,15 @@ describe('github workflows', () => {
     }
   });
 
-  it('ci runs e2e only on main pushes or by hand', () => {
+  it('ci runs e2e on pull requests, on main and by hand, but not twice for a plain branch push', () => {
     const { doc } = load('ci.yml');
-    expect(doc.jobs.e2e.if).toMatch(/refs\/heads\/main/);
+    const cond = String(doc.jobs.e2e.if);
+    expect(cond).toBe("github.event_name != 'push' || github.ref == 'refs/heads/main'");
+    // the same expression as the workflow evaluates it
+    const runs = (event: string, ref: string) => event !== 'push' || ref === 'refs/heads/main';
+    expect(runs('pull_request', 'refs/pull/5/merge')).toBe(true);
+    expect(runs('workflow_dispatch', 'refs/heads/x')).toBe(true);
+    expect(runs('push', 'refs/heads/main')).toBe(true);
+    expect(runs('push', 'refs/heads/feat/x')).toBe(false);
   });
 });
