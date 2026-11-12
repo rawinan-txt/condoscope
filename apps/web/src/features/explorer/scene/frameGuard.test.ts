@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tooSlow } from './frameGuard';
+import { nextWait, tooSlow } from './frameGuard';
 
 describe('tooSlow', () => {
   it('is false until three seconds were measured', () => {
@@ -17,5 +17,17 @@ describe('tooSlow', () => {
   });
   it('a normal 30-60 fps scene never trips it', () => {
     expect(tooSlow(Array(30).fill(45))).toBe(false);
+  });
+});
+
+describe('nextWait', () => {
+  it('does not slow down a fast scene', () => {
+    expect(nextWait(16)).toBe(0);
+    expect(nextWait(100)).toBe(0);
+  });
+  it('waits as long as the frame took when it took more than 100 ms, at most 2 s', () => {
+    expect(nextWait(250)).toBe(250);
+    expect(nextWait(1800)).toBe(1800);
+    expect(nextWait(9000)).toBe(2000);
   });
 });
