@@ -28,20 +28,20 @@ header :focus-visible, footer :focus-visible { outline-color: var(--color-champa
 
 /* Dark glass panels over the 3D scene. Colours are mirrored in components/glass.ts and checked for contrast in lib/contrast.test.ts. */
 .glass {
-  background: rgb(15 23 42 / 0.82);
-  color: #f8fafc;
+  background: rgb(20 18 15 / 0.82);
+  color: #f6f2ea;
   border: 1px solid rgb(255 255 255 / 0.15);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 @media (min-width: 48rem) {
   @media (prefers-reduced-motion: no-preference) { .glass { backdrop-filter: blur(10px); } }
 }
-.glass a { color: #7dd3fc; }
-.glass .glass-muted { color: #cbd5e1; }
-.glass select, .glass input:not([type='checkbox']) { background: #1e293b; color: #f8fafc; border-color: rgb(255 255 255 / 0.3); }
-.glass ::placeholder { color: #cbd5e1; }
-.glass .glass-accent { background: #2563eb; color: #fff; }
-.glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #2563eb; }
+.glass a { color: #e2cc9a; }
+.glass .glass-muted { color: #bdb5a6; }
+.glass select, .glass input:not([type='checkbox']) { background: #2b2620; color: #f6f2ea; border-color: rgb(255 255 255 / 0.3); }
+.glass ::placeholder { color: #bdb5a6; }
+.glass .glass-accent { background: #c8a96b; color: #14120f; }
+.glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #c8a96b; }
 
 /* Slow, one-shot motion. Only when the person has not asked for less motion, so content can never stay invisible. */
 @media (prefers-reduced-motion: no-preference) {

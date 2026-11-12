@@ -16,7 +16,7 @@ export default function UnitList({ x }: { x: ExplorerApi }) {
     <div className="max-h-[min(20rem,38dvh)] overflow-auto rounded-md border border-white/15">
       <table className="w-full whitespace-nowrap text-sm">
         <caption className="sr-only">รายการห้อง</caption>
-        <thead className="sticky top-0 bg-slate-800 text-left text-slate-300">
+        <thead className="sticky top-0 bg-ink text-left text-ink-muted">
           <tr><th className="px-2 py-1.5 font-medium">ห้อง</th><th className="px-2 py-1.5 font-medium">ตร.ม.</th><th className="px-2 py-1.5 font-medium">ราคา</th><th className="px-2 py-1.5 font-medium">สถานะ</th></tr>
         </thead>
         <tbody>
@@ -24,11 +24,11 @@ export default function UnitList({ x }: { x: ExplorerApi }) {
             const s = STATUS_STYLE[effectiveStatus(u, x.mine)];
             const selected = u.id === x.selectedId;
             return (
-              <tr key={u.id} className={selected ? 'bg-sky-400/25' : 'hover:bg-white/10'}>
+              <tr key={u.id} className={selected ? 'bg-champagne/25' : 'hover:bg-white/10'}>
                 <td className="px-2 py-1">
                   <button
                     type="button"
-                    className="font-medium text-sky-300 hover:underline"
+                    className="font-medium text-champagne-soft hover:underline"
                     aria-label={`ห้อง ${u.unit_number} ชั้น ${u.floor_number} ${s.label}`}
                     aria-pressed={selected}
                     onClick={() => x.select(u.id)}

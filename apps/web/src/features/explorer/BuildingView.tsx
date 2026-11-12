@@ -83,7 +83,7 @@ export default function BuildingView({ x, header, footer }: { x: ExplorerApi; he
       </div>
       <div
         role="group"
-        className="absolute inset-0 outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-sky-300"
+        className="absolute inset-0 outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-champagne-soft"
         tabIndex={0}
         onKeyDown={onKeyDown}
         aria-label="เลือกห้องจากตึก ใช้ลูกศรเลื่อนไปห้องข้างๆ หรือชั้นบนล่าง Enter เปิดรายละเอียด Esc ยกเลิก"

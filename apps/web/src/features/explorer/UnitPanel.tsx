@@ -41,7 +41,7 @@ export default function UnitPanel({ x, bare = false }: { x: ExplorerApi; bare?: 
         {status === 'mine' ? (
           <button type="button" onClick={() => x.cancelReservation(u.id)} className="rounded-md border border-white/30 px-3 py-1.5 text-sm hover:bg-white/10">ยกเลิกการจอง (Demo)</button>
         ) : (
-          <button type="button" disabled={u.status !== 'available'} onClick={() => x.reserve(u.id)} className="rounded-md border border-sky-300 px-3 py-1.5 text-sm text-sky-300 hover:bg-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-slate-400">
+          <button type="button" disabled={u.status !== 'available'} onClick={() => x.reserve(u.id)} className="rounded-md border border-champagne-soft px-3 py-1.5 text-sm text-champagne-soft hover:bg-white/10 disabled:cursor-not-allowed disabled:border-white/20 disabled:text-slate-400">
             จองห้องนี้ (Demo)
           </button>
         )}

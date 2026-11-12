@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { GLASS } from '../components/glass';
+import { STATUS_STYLE } from '../features/explorer/status';
 import { compositeOver, contrastRatio } from './contrast';
 
 describe('contrastRatio', () => {
@@ -27,14 +28,27 @@ describe('dark glass panel', () => {
       });
     }
     it(`the accent button text stays readable over a ${scene} scene`, () => {
-      expect(contrastRatio('#ffffff', GLASS.accentBg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(GLASS.accentText, GLASS.accentBg)).toBeGreaterThanOrEqual(4.5);
     });
   }
+
+  // the legend swatches carry meaning and must stay as they were, so they get an ivory outline that is seen on the panel whatever the scene
+  for (const scene of ['#000000', '#ffffff']) {
+    it(`the ivory outline of a legend swatch reaches 3:1 on the panel over a ${scene} scene`, () => {
+      expect(contrastRatio(GLASS.text, compositeOver(GLASS.bg, GLASS.alpha, scene))).toBeGreaterThanOrEqual(3);
+    });
+  }
+  it('every legend swatch has the outline, and the swatch colours are the status colours', () => {
+    const legend = readFileSync(join(process.cwd(), 'src/features/explorer/Legend.tsx'), 'utf8');
+    expect(legend).toContain('ring-1 ring-ivory');
+    expect(legend).toContain('STATUS_STYLE[s].color');
+    expect(Object.keys(STATUS_STYLE).length).toBeGreaterThan(0);
+  });
 
   it('index.css uses the same numbers as the tokens (so the tested colours are the shown colours)', () => {
     const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8').toLowerCase();
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(GLASS.bg.slice(i, i + 2), 16));
     expect(css).toContain(`rgb(${r} ${g} ${b} / ${GLASS.alpha})`);
-    for (const v of [GLASS.text, GLASS.muted, GLASS.link, GLASS.fieldBg, GLASS.fieldText, GLASS.accentBg]) expect(css, v).toContain(v.toLowerCase());
+    for (const v of [GLASS.text, GLASS.muted, GLASS.link, GLASS.fieldBg, GLASS.fieldText, GLASS.accentBg, GLASS.accentText]) expect(css, v).toContain(v.toLowerCase());
   });
 });
