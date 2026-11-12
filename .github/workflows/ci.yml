@@ -21,8 +21,8 @@ jobs:
       - run: npm run check:bundles -w web
   e2e:
     needs: test
-    # slow (real browser + local API), so only on main or by hand
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    # real browser + local API (about 13 minutes): on every pull request, on main and by hand; not on plain branch pushes (the pull request run covers them)
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
