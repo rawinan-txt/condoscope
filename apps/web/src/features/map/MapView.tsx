@@ -57,5 +57,5 @@ export default function MapView({ projects, onUnavailable }: { projects: Project
     };
   }, [projects, onUnavailable]);
 
-  return <div ref={box} className="h-[60vh] min-h-72 w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100" role="region" aria-label="แผนที่โครงการ" />;
+  return <div ref={box} className="h-[60vh] min-h-72 w-full overflow-hidden rounded-lg border border-ink/15 bg-ink/5" role="region" aria-label="แผนที่โครงการ" />;
 }

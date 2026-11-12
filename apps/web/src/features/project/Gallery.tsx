@@ -12,11 +12,11 @@ export default function Gallery({ items }: { items: GalleryItem[] }) {
   const drop = (src: string) => setBroken((b) => new Set(b).add(src));
 
   if (!current) {
-    return <div className="flex aspect-[16/9] items-center justify-center rounded-lg bg-slate-100 text-slate-500">ยังไม่มีภาพโครงการ</div>;
+    return <div className="flex aspect-[16/9] items-center justify-center rounded-lg bg-ink/5 text-stone">ยังไม่มีภาพโครงการ</div>;
   }
   return (
     <section aria-label="แกลเลอรีภาพโครงการ">
-      <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-slate-100">
+      <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-ink/5">
         <img key={current.src} src={current.src} alt={current.alt} className="fade-in h-full w-full object-cover" onError={() => drop(current.src)} />
         {current.ai && <AiBadge />}
       </div>

@@ -14,7 +14,7 @@ export default function UnitPage() {
   const { unitId } = useParams();
   const r = useResource(() => getUnit(Number(unitId)), [unitId]);
 
-  if (r.state === 'loading') return <div className="mx-auto max-w-6xl animate-pulse px-4 py-8"><div className="h-96 rounded-lg bg-slate-100" /></div>;
+  if (r.state === 'loading') return <div className="mx-auto max-w-6xl animate-pulse px-4 py-8"><div className="h-96 rounded-lg bg-ink/5" /></div>;
   if (r.state === 'missing') return <NotFound message="ไม่พบห้องนี้" />;
   if (r.state === 'error') return <LoadError onRetry={r.retry} />;
   return <UnitDetail key={r.data.unit.id} d={r.data} />;
@@ -31,34 +31,34 @@ function UnitDetail({ d }: { d: UnitDetailPayload }) {
   const status = STATUS_STYLE[effectiveStatus(unit, loadReservations())];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-6xl px-4 py-10">
       <Link to={`/explorer/${project.id}?unit=${unit.id}`} className="inline-flex items-center gap-1 text-sm text-accent hover:underline">
         <ArrowLeft className="size-4" aria-hidden />กลับไปเลือกห้อง
       </Link>
       <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-sm text-slate-500">{project.name} · {building.name} · ชั้น {unit.floor_number}</p>
-          <h1 className="text-2xl font-semibold">ห้อง {unit.unit_number}</h1>
+          <p className="text-sm text-stone">{project.name} · {building.name} · ชั้น {unit.floor_number}</p>
+          <h1 className="text-4xl">ห้อง {unit.unit_number}</h1>
         </div>
-        <p className="text-2xl font-semibold">{formatTHB(unit.price)}</p>
+        <p className="font-serif text-4xl">{formatTHB(unit.price)}</p>
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-3 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-4">
-        <div><dt className="text-slate-500">ประเภท</dt><dd>{UNIT_TYPE_LABEL[unit.unit_type]}</dd></div>
-        <div><dt className="text-slate-500">พื้นที่</dt><dd>{unit.area_sqm} ตร.ม.</dd></div>
-        <div><dt className="text-slate-500">ห้องนอน / ห้องน้ำ</dt><dd>{unit.bedrooms} / {unit.bathrooms}</dd></div>
-        <div><dt className="text-slate-500">ชั้น</dt><dd>{unit.floor_number}</dd></div>
-        <div><dt className="text-slate-500">ทิศ</dt><dd>{unit.direction}</dd></div>
-        <div><dt className="text-slate-500">ราคาต่อ ตร.ม.</dt><dd>{formatTHB(Math.round(unit.price / unit.area_sqm))}</dd></div>
-        <div className="col-span-2"><dt className="text-slate-500">สถานะ</dt><dd className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: status.color }} aria-hidden />{status.label}</dd></div>
+      <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-champagne pt-5 text-sm sm:grid-cols-4">
+        <div><dt className="text-stone">ประเภท</dt><dd>{UNIT_TYPE_LABEL[unit.unit_type]}</dd></div>
+        <div><dt className="text-stone">พื้นที่</dt><dd>{unit.area_sqm} ตร.ม.</dd></div>
+        <div><dt className="text-stone">ห้องนอน / ห้องน้ำ</dt><dd>{unit.bedrooms} / {unit.bathrooms}</dd></div>
+        <div><dt className="text-stone">ชั้น</dt><dd>{unit.floor_number}</dd></div>
+        <div><dt className="text-stone">ทิศ</dt><dd>{unit.direction}</dd></div>
+        <div><dt className="text-stone">ราคาต่อ ตร.ม.</dt><dd>{formatTHB(Math.round(unit.price / unit.area_sqm))}</dd></div>
+        <div className="col-span-2"><dt className="text-stone">สถานะ</dt><dd className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: status.color }} aria-hidden />{status.label}</dd></div>
       </dl>
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
+      <div className="mt-10 grid gap-10 md:grid-cols-2">
         <section aria-labelledby="plan-h">
-          <h2 id="plan-h" className="mb-2 font-semibold">แปลนห้อง <span className="text-sm font-normal text-slate-500">(คลิกจุดเพื่อดูภาพบริเวณนั้น · ประตูอยู่ด้านบน ระเบียงอยู่ด้านล่าง)</span></h2>
+          <h2 id="plan-h" className="mb-3 font-serif text-xl">แปลนห้อง <span className="text-sm font-normal text-stone">(คลิกจุดเพื่อดูภาพบริเวณนั้น · ประตูอยู่ด้านบน ระเบียงอยู่ด้านล่าง)</span></h2>
           <FloorPlanSvg plan={plan} active={active} onPick={setActive} />
-          <p className="mt-2 text-xs text-slate-500">แปลนจำลองตามประเภทห้อง ไม่ใช่แปลนของโครงการจริง</p>
+          <p className="mt-2 text-xs text-stone">แปลนจำลองตามประเภทห้อง ไม่ใช่แปลนของโครงการจริง</p>
         </section>
         <section aria-labelledby="img-h">
-          <h2 id="img-h" className="mb-2 font-semibold">ภาพภายในห้อง</h2>
+          <h2 id="img-h" className="mb-3 font-serif text-xl">ภาพภายในห้อง</h2>
           <ImageViewer items={items} active={active} onPick={setActive} />
         </section>
       </div>

@@ -8,7 +8,7 @@ import FiltersPanel from '../search/FiltersPanel';
 
 const MapView = lazy(() => import('./MapView')); // keeps maplibre out of every other page
 
-const toggle = (on: boolean) => `flex-1 rounded-md px-3 py-2 text-sm ${on ? 'bg-accent text-white' : 'border border-slate-300 bg-white'}`;
+const toggle = (on: boolean) => `flex-1 rounded-md px-3 py-2 text-sm ${on ? 'bg-accent text-white' : 'border border-ink/15 bg-white'}`;
 
 export default function MapPage() {
   const [sp, setSp] = useSearchParams();
@@ -35,13 +35,13 @@ export default function MapPage() {
       <div className="mt-4 grid gap-6 lg:grid-cols-[320px_1fr]">
         <aside className={`${showList ? 'block' : 'hidden'} space-y-4 lg:block`}>
           <FiltersPanel value={params} onChange={apply} />
-          <p aria-live="polite" className="text-sm text-slate-700">{r.state === 'ok' ? <>พบ {r.data.total} โครงการ</> : 'กำลังโหลด…'}</p>
-          {r.state === 'ok' && projects.length === 0 && <p className="text-sm text-slate-600">ไม่พบโครงการที่ตรงเงื่อนไข</p>}
-          <ul aria-label="รายการโครงการ" className="divide-y divide-slate-200 rounded-lg border border-slate-200">
+          <p aria-live="polite" className="text-sm text-stone">{r.state === 'ok' ? <>พบ {r.data.total} โครงการ</> : 'กำลังโหลด…'}</p>
+          {r.state === 'ok' && projects.length === 0 && <p className="text-sm text-stone">ไม่พบโครงการที่ตรงเงื่อนไข</p>}
+          <ul aria-label="รายการโครงการ" className="divide-y divide-ink/15 rounded-lg border border-ink/15">
             {projects.map((p) => (
               <li key={p.id} className="p-3">
                 <Link to={`/project/${p.id}`} className="font-medium text-accent hover:underline">{p.name}</Link>
-                <p className="text-sm text-slate-600">{p.neighborhood} · {p.province}</p>
+                <p className="text-sm text-stone">{p.neighborhood} · {p.province}</p>
                 <p className="text-sm">เริ่มต้น {formatMillion(p.starting_price)}</p>
               </li>
             ))}
@@ -51,11 +51,11 @@ export default function MapPage() {
           {unavailable ? (
             <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">แผนที่โหลดไม่ได้ กำลังแสดงเป็นรายการแทน</p>
           ) : (
-            <Suspense fallback={<div className="h-[60vh] animate-pulse rounded-lg bg-slate-100" />}>
+            <Suspense fallback={<div className="h-[60vh] animate-pulse rounded-lg bg-ink/5" />}>
               {r.state === 'ok' && <MapView projects={projects} onUnavailable={failed} />}
             </Suspense>
           )}
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-stone">
             แผนที่: <a className="underline" href="https://openfreemap.org">OpenFreeMap</a> © <a className="underline" href="https://www.openmaptiles.org/">OpenMapTiles</a>{' '}
             ข้อมูลจาก <a className="underline" href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>
           </p>
