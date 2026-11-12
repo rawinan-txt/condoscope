@@ -17,6 +17,7 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.goto('');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(5500); // the hero image settles for 5 s
   await shot(page, 'home');
 
   await page.goto('#/search');
@@ -27,7 +28,7 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.goto('#/project/1');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(800); // image fade-in
+  await page.waitForTimeout(5500); // the hero image settles for 5 s
   await shot(page, 'project');
 
   await page.goto('#/map');
