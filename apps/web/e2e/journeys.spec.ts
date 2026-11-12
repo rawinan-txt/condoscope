@@ -107,7 +107,7 @@ test.describe('การเข้าถึง (axe): ไม่มีปัญห
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       const result = await new AxeBuilder({ page }).exclude('.maplibregl-canvas').analyze();
       const bad = result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-      expect(bad.map((v) => `${v.id}: ${v.help} (${v.nodes.length})`)).toEqual([]);
+      expect(bad.map((v) => `${v.id}: ${v.help} (${v.nodes.length}) ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
     });
   }
 });

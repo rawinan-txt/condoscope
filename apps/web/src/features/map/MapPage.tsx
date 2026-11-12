@@ -8,7 +8,7 @@ import FiltersPanel from '../search/FiltersPanel';
 
 const MapView = lazy(() => import('./MapView')); // keeps maplibre out of every other page
 
-const toggle = (on: boolean) => `flex-1 rounded-md px-3 py-2 text-sm ${on ? 'bg-accent text-white' : 'border border-ink/15 bg-white'}`;
+const toggle = (on: boolean) => `flex-1 rounded-md px-3 py-2 text-sm ${on ? 'bg-accent text-ivory' : 'border border-ink/15 bg-white'}`;
 
 export default function MapPage() {
   const [sp, setSp] = useSearchParams();
@@ -27,7 +27,7 @@ export default function MapPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      <h1 className="text-2xl font-semibold">แผนที่โครงการ</h1>
+      <h1 className="text-4xl">แผนที่โครงการ</h1>
       <div className="mt-3 flex gap-2 lg:hidden" role="group" aria-label="มุมมอง">
         <button type="button" aria-pressed={view === 'map'} className={toggle(view === 'map')} onClick={() => setView('map')}>แผนที่</button>
         <button type="button" aria-pressed={view === 'list'} className={toggle(view === 'list')} onClick={() => setView('list')}>รายการ</button>
