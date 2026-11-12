@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { data, open3D, panelTitle, visibleUnits } from './helpers';
+import { data, open3D, panelTitle, untilResponsive, visibleUnits } from './helpers';
 
 for (const project of data.projects) {
   test(`เลือกห้องจากตึก 3D ได้ตรงห้อง — ${project.name}`, async ({ page }) => {
@@ -89,7 +89,7 @@ test('คลิกห้อง → ดูรายละเอียด → hots
   await page.getByRole('link', { name: 'กลับไปเลือกห้อง' }).click();
   await expect(panelTitle(page)).toHaveText(`ห้อง ${a.unit_number}`);
   await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
-  await page.waitForTimeout(1500);
+  await untilResponsive(page);
   const p = await page.evaluate((id) => window.__condoscope!.projectUnit(id), b.id);
   expect(p).not.toBeNull();
   await page.mouse.click(p!.x, p!.y);

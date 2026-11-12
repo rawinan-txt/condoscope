@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { data, open3D, panelTitle, visibleUnits } from './helpers';
+import { data, open3D, panelTitle, untilResponsive, visibleUnits } from './helpers';
 
 const NOTICE = 'ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง';
 // a tiny valid map style so the map tests do not depend on the internet or on OpenFreeMap being up
@@ -19,7 +19,7 @@ test('ทางเดินหลัก: หน้าแรก → ค้นห�
   await expect(page.getByRole('heading', { level: 1, name: 'Noventa Ari' })).toBeVisible();
   await page.getByRole('link', { name: 'เลือกห้องจากตัวอาคาร' }).click();
   await page.waitForFunction(() => !!window.__condoscope, null, { timeout: 60_000 });
-  await page.waitForTimeout(1500);
+  await untilResponsive(page);
   const [u] = await visibleUnits(page, 1, 1);
   await page.mouse.click(u.x, u.y);
   await expect(panelTitle(page)).toHaveText(`ห้อง ${u.unit_number}`);
