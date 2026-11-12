@@ -13,6 +13,7 @@ const ACTION_MAJORS: Record<string, string> = {
   'actions/setup-node': 'v7',
   'actions/configure-pages': 'v5',
   'actions/upload-pages-artifact': 'v4',
+  'actions/upload-artifact': 'v7',
   'actions/deploy-pages': 'v4',
 };
 // receives the Cloudflare API token, so it is pinned to a commit (a moved tag could not swap the code under us)
