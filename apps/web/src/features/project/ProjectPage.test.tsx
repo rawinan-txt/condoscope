@@ -31,6 +31,17 @@ describe('ProjectPage', () => {
     expect(screen.getByText(detail.project.description)).toBeInTheDocument();
   });
 
+  it('puts the explorer button before the description in the page order, and the hero image is decorative with the AI badge', async () => {
+    open();
+    await project();
+    const cta = screen.getByRole('link', { name: 'เลือกห้องจากตัวอาคาร' });
+    const about = screen.getByRole('heading', { name: 'เกี่ยวกับโครงการ' });
+    expect(cta.compareDocumentPosition(about) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const heroImg = document.querySelector('header.relative img');
+    expect(heroImg).toHaveAttribute('alt', '');
+    expect(screen.getAllByText('ภาพประกอบสร้างด้วย AI').length).toBeGreaterThan(0);
+  });
+
   it('lists the available units by type', async () => {
     open();
     await project();

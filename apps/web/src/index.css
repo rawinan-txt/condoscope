@@ -2,13 +2,23 @@
 
 @theme {
   --font-sans: 'IBM Plex Sans Thai', ui-sans-serif, system-ui, sans-serif;
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
+  --font-serif: 'Noto Serif Thai', 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --color-ink: #14120f;
+  --color-ivory: #f6f2ea;
+  --color-stone: #5c554b;
+  --color-bronze: #7a5a22;
+  --color-champagne: #c8a96b;
+  --color-champagne-soft: #e2cc9a;
+  --color-ink-muted: #bdb5a6;
+  --color-accent: #14120f;
+  --color-accent-hover: #2b2620;
 }
 
 html, body, #root { height: 100%; }
-body { @apply bg-white text-slate-900 antialiased; }
+body { @apply bg-ivory text-ink antialiased; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+h1 { font-family: var(--font-serif); }
+header :focus-visible, footer :focus-visible { outline-color: var(--color-champagne); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
@@ -18,17 +28,25 @@ body { @apply bg-white text-slate-900 antialiased; }
 
 /* Dark glass panels over the 3D scene. Colours are mirrored in components/glass.ts and checked for contrast in lib/contrast.test.ts. */
 .glass {
-  background: rgb(15 23 42 / 0.82);
-  color: #f8fafc;
+  background: rgb(20 18 15 / 0.82);
+  color: #f6f2ea;
   border: 1px solid rgb(255 255 255 / 0.15);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 @media (min-width: 48rem) {
   @media (prefers-reduced-motion: no-preference) { .glass { backdrop-filter: blur(10px); } }
 }
-.glass a { color: #7dd3fc; }
-.glass .glass-muted { color: #cbd5e1; }
-.glass select, .glass input:not([type='checkbox']) { background: #1e293b; color: #f8fafc; border-color: rgb(255 255 255 / 0.3); }
-.glass ::placeholder { color: #cbd5e1; }
-.glass .glass-accent { background: #2563eb; color: #fff; }
-.glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #2563eb; }
+.glass a { color: #e2cc9a; }
+.glass .glass-muted { color: #bdb5a6; }
+.glass select, .glass input:not([type='checkbox']) { background: #2b2620; color: #f6f2ea; border-color: rgb(255 255 255 / 0.3); }
+.glass ::placeholder { color: #bdb5a6; }
+.glass .glass-accent { background: #c8a96b; color: #14120f; }
+.glass :focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #c8a96b; }
+
+/* Slow, one-shot motion. Only when the person has not asked for less motion, so content can never stay invisible. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { opacity: 0; translate: 0 16px; transition: opacity 700ms ease-out, translate 700ms ease-out; }
+  .reveal[data-revealed] { opacity: 1; translate: 0 0; }
+  @keyframes hero-settle { from { scale: 1.06; } to { scale: 1; } }
+  .hero-settle { animation: hero-settle 5s ease-out both; }
+}

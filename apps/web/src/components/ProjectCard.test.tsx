@@ -31,6 +31,14 @@ describe('ProjectCard', () => {
     expect(img).toHaveAttribute('loading', 'lazy');
   });
 
+  it('is borderless, with a serif name and a text link (no button box)', () => {
+    show(noventa);
+    expect(screen.getByRole('article')).not.toHaveClass('border');
+    expect(screen.getByRole('heading', { name: 'Noventa Ari' })).toHaveClass('font-serif');
+    expect(screen.getByRole('link')).toHaveClass('underline');
+    expect(screen.getByRole('link')).not.toHaveClass('bg-accent');
+  });
+
   it('marks only the featured project', () => {
     const { unmount } = show(noventa);
     expect(screen.getByText('แนะนำ')).toBeInTheDocument();

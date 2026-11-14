@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, expect, it } from 'vitest';
@@ -53,5 +53,17 @@ describe('Navbar', () => {
   it('every page keeps the mock-data notice in the footer', () => {
     at('/anything');
     expect(screen.getByText(/ข้อมูลจำลองเพื่อการสาธิต ไม่มีการขายจริง/)).toBeInTheDocument();
+  });
+
+  it('uses the luxury look: ink bar, serif logo, ink footer', () => {
+    at('/');
+    expect(screen.getByRole('banner')).toHaveClass('bg-ink');
+    expect(screen.getByRole('link', { name: 'CondoScope' })).toHaveClass('font-serif');
+    expect(screen.getByRole('contentinfo')).toHaveClass('bg-ink');
+  });
+
+  it('keeps the mock-data badge in the bar', () => {
+    at('/');
+    expect(within(screen.getByRole('banner')).getByText('ข้อมูลจำลอง')).toBeInTheDocument();
   });
 });

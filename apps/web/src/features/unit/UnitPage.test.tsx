@@ -19,6 +19,12 @@ describe('UnitPage', () => {
     expect(screen.getByText(a1805.direction)).toBeInTheDocument();
   });
 
+  it('shows the price in serif and the facts without a box around them', async () => {
+    at(`/unit/${a1805.id}`);
+    expect(await screen.findByText(formatTHB(a1805.price))).toHaveClass('font-serif');
+    expect(screen.getByText('ประเภท').closest('dl')).not.toHaveClass('rounded-lg');
+  });
+
   it('switches the interior view when a floor-plan hotspot is clicked', async () => {
     at(`/unit/${a1805.id}`);
     const plan = await screen.findByRole('group', { name: 'แปลนห้อง' });

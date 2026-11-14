@@ -17,7 +17,7 @@ export default function FloorPlanSvg({ plan, active, onPick }: { plan: FloorPlan
         <line x1={0} y1={0} x2={100} y2={0} stroke="#334155" strokeWidth={5} vectorEffect="non-scaling-stroke" />
       </svg>
       {plan.rooms.map((r, i) => (
-        <span key={i} className="pointer-events-none absolute text-[11px] text-slate-500" style={{ left: `${r.x + 2}%`, top: `${r.y + 2}%` }} aria-hidden>{r.label}</span>
+        <span key={i} className="pointer-events-none absolute text-[11px] text-stone" style={{ left: `${r.x + 2}%`, top: `${r.y + 2}%` }} aria-hidden>{r.label}</span>
       ))}
       {plan.hotspots.map((h) => (
         <button
@@ -26,7 +26,7 @@ export default function FloorPlanSvg({ plan, active, onPick }: { plan: FloorPlan
           aria-label={`ดูภาพ ${h.label}`}
           aria-pressed={h.key === active}
           onClick={() => onPick(h.key)}
-          className={`absolute size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow ring-2 transition ${h.key === active ? 'bg-accent ring-accent' : 'bg-slate-700 ring-slate-300 hover:bg-accent'}`}
+          className={`absolute size-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow ring-2 transition ${h.key === active ? 'bg-champagne ring-ink' : 'bg-stone ring-white/70 hover:bg-ink'}`}
           style={{ left: `${h.x}%`, top: `${h.y}%` }}
         >
           <span className="sr-only">{h.label}</span>

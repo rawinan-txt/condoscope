@@ -2,6 +2,9 @@ import { sanitizeSearchParams, toQueryRecord, type Project } from '@condoscope/s
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import HeroImage from '../../components/HeroImage';
+import { scrimBackground } from '../../components/theme';
+import { useReveal } from '../../hooks/useReveal';
 import { FIELD_CLASS, PRICE_STEPS } from '../search/options';
 
 const field = FIELD_CLASS;
@@ -9,6 +12,7 @@ const field = FIELD_CLASS;
 /** The search box is the main thing on the home page (spec 8.1). Submitting opens /search with the filters in the URL. */
 export default function Hero({ projects }: { projects: Project[] }) {
   const navigate = useNavigate();
+  const reveal = useReveal<HTMLHeadingElement>();
   const [form, setForm] = useState({ q: '', province: '', district: '', minPrice: '', maxPrice: '', bedrooms: '' });
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value, ...(k === 'province' ? { district: '' } : {}) }));
@@ -18,7 +22,6 @@ export default function Hero({ projects }: { projects: Project[] }) {
     () => [...new Set(projects.filter((p) => !form.province || p.province === form.province).map((p) => p.district))],
     [projects, form.province],
   );
-  const featured = projects.find((p) => p.is_featured) ?? projects[0];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,35 +30,22 @@ export default function Hero({ projects }: { projects: Project[] }) {
   }
 
   return (
-    <section className="relative isolate bg-slate-900">
-      {featured?.thumbnail_url && (
-        <img src={`${import.meta.env.BASE_URL}${featured.thumbnail_url}`} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-40" />
-      )}
-      <div className="mx-auto max-w-5xl px-4 py-12 md:py-20">
-        <h1 className="text-3xl font-bold text-white md:text-4xl">ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย</h1>
-        <p className="mt-2 text-slate-200">โครงการจำลอง 5 แห่งในกรุงเทพฯ และปริมณฑล ดูตึก 3 มิติ เลือกห้อง ดูแปลน</p>
-        <form onSubmit={submit} className="mt-8 rounded-lg bg-white p-4 shadow-lg">
-          <label className="block text-sm font-medium">
-            ชื่อโครงการหรือทำเล
-            <input type="text" value={form.q} onChange={set('q')} maxLength={100} placeholder="เช่น อารีย์ หรือ Noventa" className={`${field} py-3 text-base`} />
-          </label>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <section className="relative isolate flex min-h-[max(560px,calc(100svh-3.5rem))] flex-col justify-end overflow-hidden bg-ink">
+      <div className="absolute inset-0 -z-20 overflow-hidden"><HeroImage src="images/home-hero.webp" srcSm="images/home-hero-sm.webp" priority className="hero-settle" /></div>
+      <div className="absolute inset-0 -z-10" style={{ background: scrimBackground }} aria-hidden />
+      <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-24 md:pb-16">
+        <h1 className="reveal max-w-3xl text-4xl font-semibold leading-tight text-white md:text-6xl" ref={reveal}>ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย</h1>
+        <p className="mt-4 max-w-xl text-white md:text-lg">โครงการจำลอง 5 แห่งในกรุงเทพฯ และปริมณฑล ดูตึก 3 มิติ เลือกห้อง ดูแปลน</p>
+        <form onSubmit={submit} className="mt-8 bg-ivory p-4 text-ink shadow-2xl md:p-5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
+            <label className="block text-sm font-medium">
+              ชื่อโครงการหรือทำเล
+              <input type="text" value={form.q} onChange={set('q')} maxLength={100} placeholder="เช่น อารีย์ หรือ Noventa" className={`${field} py-2.5`} />
+            </label>
             <label className="block text-sm font-medium">จังหวัด
               <select value={form.province} onChange={set('province')} className={field}>
                 <option value="">ทุกจังหวัด</option>
                 {provinces.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </label>
-            <label className="block text-sm font-medium">เขต
-              <select value={form.district} onChange={set('district')} className={field}>
-                <option value="">ทุกเขต</option>
-                {districts.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </label>
-            <label className="block text-sm font-medium">ราคาต่ำสุด
-              <select value={form.minPrice} onChange={set('minPrice')} className={field}>
-                <option value="">ไม่กำหนด</option>
-                {PRICE_STEPS.map((m) => <option key={m} value={m * 1_000_000}>{m} ล้านบาท</option>)}
               </select>
             </label>
             <label className="block text-sm font-medium">ราคาสูงสุด
@@ -72,10 +62,27 @@ export default function Hero({ projects }: { projects: Project[] }) {
                 <option value="2">2 ห้องนอน</option>
               </select>
             </label>
+            <button type="submit" className="inline-flex items-center justify-center gap-2 bg-champagne px-8 py-2.5 font-medium text-ink hover:bg-champagne-soft md:col-span-2 lg:col-span-1">
+              <Search className="size-4" aria-hidden />ค้นหา
+            </button>
           </div>
-          <button type="submit" className="mt-4 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-2.5 font-medium text-white hover:bg-accent-hover">
-            <Search className="size-4" aria-hidden />ค้นหา
-          </button>
+          <details className="mt-3 text-sm">
+            <summary className="cursor-pointer text-bronze underline underline-offset-4">ตัวกรองเพิ่มเติม</summary>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:max-w-xl">
+              <label className="block font-medium">เขต
+                <select value={form.district} onChange={set('district')} className={field}>
+                  <option value="">ทุกเขต</option>
+                  {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </label>
+              <label className="block font-medium">ราคาต่ำสุด
+                <select value={form.minPrice} onChange={set('minPrice')} className={field}>
+                  <option value="">ไม่กำหนด</option>
+                  {PRICE_STEPS.map((m) => <option key={m} value={m * 1_000_000}>{m} ล้านบาท</option>)}
+                </select>
+              </label>
+            </div>
+          </details>
         </form>
       </div>
     </section>

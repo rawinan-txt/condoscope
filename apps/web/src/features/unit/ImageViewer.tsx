@@ -13,15 +13,15 @@ export default function ImageViewer({ items, active, onPick }: { items: ViewerIt
   const step = (d: number) => onPick(items[(i + d + items.length) % items.length].key);
 
   return (
-    <figure className="overflow-hidden rounded-lg border border-slate-200">
-      <div className="relative aspect-[4/3] bg-slate-100">
+    <figure className="overflow-hidden bg-ink/5">
+      <div className="relative aspect-[4/3] bg-ink/5">
         {item.src && !broken[item.src] ? (
           <>
             <img key={item.src} src={item.src} alt={item.label} className="fade-in h-full w-full object-cover" onError={() => setBroken((b) => ({ ...b, [item.src!]: true }))} />
             <AiBadge />
           </>
         ) : (
-          <div key={item.key} className="fade-in flex h-full w-full flex-col items-center justify-center gap-2 text-slate-500">
+          <div key={item.key} className="fade-in flex h-full w-full flex-col items-center justify-center gap-2 text-stone">
             <ImageOff className="size-8" aria-hidden />
             <p className="text-sm">ภาพตัวอย่าง: {item.label} (รอภาพจริง)</p>
           </div>
@@ -31,7 +31,7 @@ export default function ImageViewer({ items, active, onPick }: { items: ViewerIt
       </div>
       <figcaption className="flex items-center justify-between px-3 py-2 text-sm">
         <span className="font-medium">{item.label}</span>
-        <span className="text-slate-500">{i + 1} / {items.length}</span>
+        <span className="text-stone">{i + 1} / {items.length}</span>
       </figcaption>
     </figure>
   );
