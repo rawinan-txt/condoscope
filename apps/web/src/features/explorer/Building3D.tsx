@@ -22,7 +22,12 @@ declare global {
 }
 
 /** Set once the scene proved too slow, so switching 3D -> 2D -> 3D does not start in high quality again (and stall again). */
-let deviceIsSlow = false;
+let deviceIsSlow = savedQuality() === 'low';
+
+/** The visitor's (or the test runner's) saved choice: localStorage 'condoscope.quality' = 'low' starts the scene in the cheaper tier. */
+function savedQuality(): string | null {
+  try { return localStorage.getItem('condoscope.quality'); } catch { return null; }
+}
 
 export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi; time: TimeOfDay; onUnavailable(): void }) {
   const bounds = useMemo(() => projectBounds(x.buildings), [x.buildings]);
