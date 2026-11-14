@@ -5,6 +5,8 @@ import { open3D, panelTitle, visibleUnits } from './helpers';
 
 // README pictures. Only runs through `npm run screenshots` (SCREENSHOTS=1) so normal e2e runs do not rewrite tracked files.
 test.skip(!process.env.SCREENSHOTS, 'run with npm run screenshots');
+// README pictures show the full-quality scene at the desktop size, unlike the other specs (see playwright.config.ts)
+test.use({ viewport: { width: 1400, height: 900 }, storageState: { cookies: [], origins: [] } });
 
 const dir = fileURLToPath(new URL('../../../docs/screenshots/', import.meta.url));
 const shot = (page: import('@playwright/test').Page, name: string) => page.screenshot({ path: `${dir}${name}.png` });

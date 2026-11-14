@@ -8,6 +8,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import City, { type FloorFocus } from './scene/City';
 import { floorViewGoal, freeWidthFraction, homeView, isCovered, projectBounds, stepCamera, towerBox, unitViewGoal, unitWorldCenter, type Bounds, type Vec3 } from './scene/layout';
+import { nextWait, tooSlow } from './scene/frameGuard';
 import Landscape from './scene/Landscape';
 import Site from './scene/Site';
 import Sky from './scene/Sky';
@@ -20,6 +21,14 @@ declare global {
   interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null; cameraBusy(): boolean } }
 }
 
+/** Set once the scene proved too slow, so switching 3D -> 2D -> 3D does not start in high quality again (and stall again). */
+let deviceIsSlow = savedQuality() === 'low';
+
+/** The visitor's (or the test runner's) saved choice: localStorage 'condoscope.quality' = 'low' starts the scene in the cheaper tier. */
+function savedQuality(): string | null {
+  try { return localStorage.getItem('condoscope.quality'); } catch { return null; }
+}
+
 export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi; time: TimeOfDay; onUnavailable(): void }) {
   const bounds = useMemo(() => projectBounds(x.buildings), [x.buildings]);
   const home = useMemo(() => homeView(bounds), [bounds]);
@@ -29,7 +38,7 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
   useEffect(() => () => { alive.current = false; }, []);
   const [tipAt, setTipAt] = useState<{ left: number; top: number } | null>(null);
   const coarse = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
-  const [low, setLow] = useState(coarse); // phones start in low quality; desktops drop to it when FPS stays < 40
+  const [low, setLow] = useState(coarse || deviceIsSlow); // phones start in low quality; desktops drop to it when FPS stays < 40, and stay there when the 3D view is opened again
   useEffect(() => { uNight.value = time === 'dusk' ? 1 : 0; }, [time]);
   const hovered = x.unit(x.hoveredId);
 
@@ -44,6 +53,7 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
   return (
     <div ref={wrap} className="relative h-full w-full overflow-hidden" style={{ background: LOOK[time].bg }}>
       <Canvas
+        frameloop="demand"
         shadows="percentage"
         dpr={[1, low ? 1.25 : 2]}
         camera={{ fov: 38, near: 1, far: 5000, position: home.position }}
@@ -53,7 +63,7 @@ export default function Building3D({ x, time, onUnavailable }: { x: ExplorerApi;
         role="img"
         aria-label="ตึก 3 มิติ ลากเพื่อหมุน เลื่อนล้อเพื่อซูม"
       >
-        <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => setLow(true)} />
+        <Scene x={x} bounds={bounds} home={home} onHover={onHover} time={time} low={low} onSlow={() => { deviceIsSlow = true; setLow(true); }} />
       </Canvas>
       {hovered && tipAt && <UnitTooltip unit={hovered} mine={x.mine} left={tipAt.left} top={tipAt.top} />}
     </div>
@@ -88,6 +98,8 @@ function Scene({ x, bounds, home, onHover, time, low, onSlow }: SceneProps) {
   return (
     <>
       <PerformanceMonitor ms={250} iterations={8} bounds={() => [40, 1000]} onDecline={onSlow} />
+      <SlowGuard onSlow={onSlow} />
+      <Pacer />
       <fog attach="fog" args={[look.fog, time === 'day' ? 600 : 350, time === 'day' ? 2600 : 1500]} />
       <Sky time={time} />
       {/* own Suspense: the scene draws right away and the HDRI lighting joins when loaded */}
@@ -199,6 +211,52 @@ function screenPoint(x: ExplorerApi, id: number, mesh: InstancedMesh | null, cam
   // a room under a floating panel cannot be seen or clicked, so it does not count as visible (the camera then turns to it)
   const panels = [...document.querySelectorAll('.glass')].map((el) => el.getBoundingClientRect());
   return isCovered(point.x, point.y, panels, 6) ? null : point;
+}
+
+/**
+ * Keeps drawing (the traffic lights move all the time) but paces itself: see nextWait. The canvas runs with frameloop="demand";
+ * interaction (orbit, hover, a React change) still draws at once because three/R3F invalidate on their own.
+ */
+function Pacer() {
+  const invalidate = useThree((s) => s.invalidate);
+  const last = useRef(performance.now());
+  const waited = useRef(0);
+  const period = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  useFrame(() => {
+    const now = performance.now();
+    const dt = now - last.current;
+    last.current = now;
+    if (dt >= waited.current) period.current = dt - waited.current; // an early frame (hover, orbit) says nothing about the cost of a frame
+    waited.current = nextWait(period.current);
+    clearTimeout(timer.current);
+    if (waited.current === 0) invalidate();
+    else timer.current = setTimeout(invalidate, waited.current);
+  });
+  return null;
+}
+
+/** Drops to the cheaper quality tier within seconds when frames take a second or more (PerformanceMonitor alone needs ~8 slow frames). */
+function SlowGuard({ onSlow }: { onSlow(): void }) {
+  const frames = useRef(0);
+  const cb = useRef(onSlow);
+  cb.current = onSlow; // the caller passes a new function every render; the timer below must keep its history across renders
+  useFrame(() => { frames.current += 1; });
+  useEffect(() => {
+    const history: number[] = [];
+    let started = false;
+    const id = setInterval(() => {
+      const n = frames.current;
+      frames.current = 0;
+      started ||= n > 0; // the first frame also compiles shaders: do not judge before it exists
+      if (!started) return;
+      history.push(n);
+      if (tooSlow(history)) cb.current();
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return null;
 }
 
 /** Test hook used by the Playwright success-criterion test. */
