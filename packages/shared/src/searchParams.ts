@@ -5,7 +5,8 @@ const SORTS: ProjectSort[] = ['recommended', 'price_asc', 'price_desc', 'newest'
 const WHOLE = /^[0-9]{1,10}$/;
 
 const text = (v: string | undefined): string | undefined => {
-  const t = v?.trim().slice(0, 100).trim();
+  // the API counts UTF-16 units, so cut there, then drop a lone high surrogate (half an emoji) left at the end
+  const t = v?.trim().slice(0, 100).replace(/[\uD800-\uDBFF]$/, '').trim();
   return t ? t : undefined;
 };
 const whole = (v: string | undefined): number | undefined => {

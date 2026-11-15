@@ -35,6 +35,13 @@ describe('sanitizeSearchParams', () => {
     expect(r.district).toHaveLength(100);
   });
 
+  it('never leaves half an emoji when the cut falls inside one', () => {
+    const r = sanitizeSearchParams({ q: 'a'.repeat(99) + '😀😀' });
+    expect(r.q).toBe('a'.repeat(99));
+    expect(r.q!.isWellFormed()).toBe(true);
+    expect(sanitizeSearchParams({ q: 'a'.repeat(98) + '😀' }).q).toBe('a'.repeat(98) + '😀');
+  });
+
   it('ignores unknown keys', () => {
     expect(sanitizeSearchParams({ utm_source: 'x', q: 'ari' })).toEqual({ q: 'ari' });
   });
