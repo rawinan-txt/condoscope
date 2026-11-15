@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import fallback from '../../data/fallback.json';
 import { projectBounds, towerBox, unitViewGoal } from '../explorer/scene/layout';
 import { diveGoal, orbitPose, scenePose } from './poses';
-import { CHAPTER_START, chapterAt, countAt, interiorReveal, litFloors, orbitDegrees, pickShowcaseUnit, sceneAt, searchOpacity } from './timeline';
+import { CHAPTER_START, chapterAt, countAt, interiorReveal, litFloors, orbitDegrees, pickShowcaseUnit, sceneAt } from './timeline';
 
 const data = fallback as unknown as Dataset;
 const b: Building = data.buildings.find((x) => x.project_id === 1)!;
@@ -16,19 +16,14 @@ const up = (v: number[]) => v.every((x, i) => i === 0 || x >= v[i - 1]);
 
 describe('chapters and scenes', () => {
   it('follow the table and only move forward', () => {
-    expect([0, 0.2, 0.35, 0.5, 0.8, 1].map(chapterAt)).toEqual(['search', 'filter', 'map', 'tower', 'plan', 'reserve']);
-    const order = ['search', 'filter', 'map', 'tower', 'plan', 'reserve'];
+    expect([0, 0.2, 0.35, 0.5, 0.8, 1].map(chapterAt)).toEqual(['welcome', 'filter', 'map', 'tower', 'plan', 'reserve']);
+    const order = ['welcome', 'filter', 'map', 'tower', 'plan', 'reserve'];
     expect(up(steps.map((p) => order.indexOf(chapterAt(p))))).toBe(true);
     expect(chapterAt(CHAPTER_START.tower)).toBe('tower');
   });
   it('the three towers come one after another', () => {
     expect([0, 0.41, 0.42, 0.67, 0.68, 1].map(sceneAt)).toEqual([0, 0, 1, 1, 2, 2]);
     expect(up(steps.map(sceneAt))).toBe(true);
-  });
-  it('the search box is fully there on the first screen and gone before the second chapter', () => {
-    expect(searchOpacity(0)).toBe(1);
-    expect(searchOpacity(CHAPTER_START.filter)).toBe(0);
-    expect(up(steps.map((p) => -searchOpacity(p)))).toBe(true);
   });
 });
 

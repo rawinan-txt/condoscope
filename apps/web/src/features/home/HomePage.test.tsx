@@ -21,11 +21,9 @@ const where = () => screen.getByTestId('where').textContent!;
 const searchQuery = () => new URLSearchParams(where().split('?')[1] ?? '');
 
 describe('HomePage', () => {
-  it('follows the order of spec 8.1: the search first screen with its story, popular areas, featured, all projects, map strip', async () => {
+  it('follows the order of spec 8.1: hero search, popular areas, featured, all projects, map strip', async () => {
     await openHome();
-    await screen.findByRole('heading', { name: 'สำรวจโครงการบนแผนที่' });
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'ค้นหาและกรองได้ตามใจ', 'ดูทำเลบนแผนที่', 'เลือกห้องจากตัวตึก', 'ดูแปลนและภาพภายในห้อง', 'จองห้องแบบเดโม',
       'ทำเลยอดนิยม', 'โครงการแนะนำ', 'โครงการทั้งหมด', 'สำรวจโครงการบนแผนที่',
     ]);
     expect(screen.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' })).toBeInTheDocument();
@@ -41,16 +39,6 @@ describe('HomePage', () => {
 
   it('has no map and no 3D canvas on the home page', async () => {
     await openHome();
-    expect(document.querySelector('canvas')).toBeNull();
-  });
-
-  it('puts the story after the search hero and before the popular areas (spec 8.1)', async () => {
-    await openHome();
-    const story = await screen.findByRole('button', { name: 'ข้ามส่วนนี้' });
-    const hero = screen.getByRole('heading', { level: 1 });
-    const areas = screen.getByRole('heading', { name: 'ทำเลยอดนิยม' });
-    expect(hero.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(story.compareDocumentPosition(areas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(document.querySelector('canvas')).toBeNull();
   });
 
@@ -111,11 +99,11 @@ describe('HomePage', () => {
     expect(Object.fromEntries(searchQuery())).toEqual({ province: 'นนทบุรี', district: 'เมืองนนทบุรี', minPrice: '2000000' });
   });
 
-  it('the first picture is decorative, loaded with priority and the heading is a serif h1', async () => {
+  it('the hero image is decorative, loaded with priority and the heading is a serif h1', async () => {
     await openHome();
-    const stage = screen.getByRole('heading', { level: 1 }).closest('.story-stage')!;
-    expect(stage.querySelector('img')).toHaveAttribute('alt', '');
-    expect(stage.querySelector('img')).toHaveAttribute('fetchpriority', 'high');
+    const hero = screen.getByRole('heading', { level: 1 }).closest('section')!;
+    expect(hero.querySelector('img')).toHaveAttribute('alt', '');
+    expect(hero.querySelector('img')).toHaveAttribute('fetchpriority', 'high');
   });
 
   it('shows a retry when the projects cannot be loaded', async () => {

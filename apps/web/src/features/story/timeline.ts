@@ -3,19 +3,16 @@ import { easeInOut, remap } from './scroll';
 
 /**
  * The story introduces the whole system, one chapter after another. Where each chapter starts (p, 0..1) is only written here.
- * search = the first screen (the search box floats on the building) · filter · map · tower (floors light up, the total counts) · plan (fly into a room) · reserve.
+ * welcome = the first screen (a tower, no search box: this is the intro for a first visit) · filter · map · tower (floors light up, the total counts) · plan (fly into a room) · reserve.
  */
-export const CHAPTER_START = { search: 0, filter: 0.1, map: 0.28, tower: 0.42, plan: 0.68, reserve: 0.88 } as const;
-export const CHAPTERS = ['search', 'filter', 'map', 'tower', 'plan', 'reserve'] as const;
+export const CHAPTER_START = { welcome: 0, filter: 0.1, map: 0.28, tower: 0.42, plan: 0.68, reserve: 0.88 } as const;
+export const CHAPTERS = ['welcome', 'filter', 'map', 'tower', 'plan', 'reserve'] as const;
 export type Chapter = (typeof CHAPTERS)[number];
 
-export const chapterAt = (p: number): Chapter => [...CHAPTERS].reverse().find((c) => p >= CHAPTER_START[c]) ?? 'search';
+export const chapterAt = (p: number): Chapter => [...CHAPTERS].reverse().find((c) => p >= CHAPTER_START[c]) ?? 'welcome';
 
 /** The story shows three towers from three projects, one per stretch: 0 until the tower chapter, 1 through it, 2 for the flight into a room. */
 export const sceneAt = (p: number): 0 | 1 | 2 => (p < CHAPTER_START.tower ? 0 : p < CHAPTER_START.plan ? 1 : 2);
-
-/** The search box fades out as the story moves on (it stays reachable from the menu and the closing buttons). */
-export const searchOpacity = (p: number): number => 1 - remap(p, 0.05, CHAPTER_START.filter);
 
 /** How far the camera has gone round the current tower, degrees. */
 export const ORBIT_FIRST = 200;

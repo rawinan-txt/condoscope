@@ -5,20 +5,14 @@ import ProjectCard from '../../components/ProjectCard';
 import { useResource } from '../../hooks/useResource';
 import { useReveal } from '../../hooks/useReveal';
 import { searchProjects } from '../../services/api';
-import StoryHero from '../story/StoryHero';
+import Hero from './Hero';
 
 export default function HomePage() {
   const r = useResource(() => searchProjects({ limit: 50 }), []);
 
   if (r.state === 'error' || r.state === 'missing') return <LoadError onRetry={r.state === 'error' ? r.retry : () => location.reload()} />;
 
-  // the first screen (a picture of a tower with the search box on it) does not wait for the project list: it is drawn at once and fills in
-  if (r.state === 'loading') return (
-    <>
-      <StoryHero projects={[]} />
-      <div className="mx-auto max-w-6xl animate-pulse px-4 py-20"><div className="h-72 bg-ink/10" /></div>
-    </>
-  );
+  if (r.state === 'loading') return <div className="mx-auto max-w-5xl animate-pulse px-4 py-8"><div className="h-72 rounded-lg bg-ink/10" /></div>;
 
   const projects = r.data.items;
   const areas = [...new Set(projects.map((p) => p.neighborhood))];
@@ -26,7 +20,7 @@ export default function HomePage() {
 
   return (
     <>
-      <StoryHero projects={projects} />
+      <Hero projects={projects} />
       <div className="mx-auto max-w-6xl space-y-24 px-4 py-20">
         <Section id="areas-h" title="ทำเลยอดนิยม">
           <ul className="flex flex-wrap gap-x-8 gap-y-3">
