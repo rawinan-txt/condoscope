@@ -16,7 +16,7 @@ export function createApp() {
     await next();
     c.res.headers.set('X-Content-Type-Options', 'nosniff');
   });
-  app.use('/api/*', readOnly, cors, cache);
+  app.use('/api/*', cors, readOnly, cache); // cors first so a 405 also carries the CORS header
   app.route('/', health);
   app.route('/', projects);
   app.route('/', buildings);

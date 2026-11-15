@@ -93,6 +93,21 @@ describe('write methods are closed', () => {
   });
 });
 
+describe('HEAD and 405 answers', () => {
+  it('HEAD is cacheable exactly like GET', async () => {
+    const get = await call('/api/projects/1');
+    const head = await call('/api/projects/1', { method: 'HEAD' });
+    expect(head.headers.get('cache-control')).toBe(get.headers.get('cache-control'));
+    expect(head.headers.get('cache-control')).toContain('max-age');
+  });
+
+  it('a 405 from an allowed origin still carries the CORS header (the browser can read the error)', async () => {
+    const r = await call('/api/projects', { method: 'POST', body: '{}', headers: { Origin: 'http://localhost:5173' } });
+    expect(r.status).toBe(405);
+    expect(acao(r)).toBe('http://localhost:5173');
+  });
+});
+
 describe('X-Content-Type-Options', () => {
   it.each(['/api/projects/1', '/api/units/999999', '/api/units/abc', '/api/nope'])('is nosniff on %s', async (path) => {
     expect((await call(path)).headers.get('x-content-type-options')).toBe('nosniff');

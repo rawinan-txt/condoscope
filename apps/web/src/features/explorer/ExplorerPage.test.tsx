@@ -14,6 +14,11 @@ describe('ExplorerPage', () => {
     expect(await screen.findByRole('heading', { name: 'ไม่พบข้อมูล' })).toBeInTheDocument();
   });
 
+  it.each(['abc', '1.5', '-1', '0'])('shows not-found for the non-numeric or impossible project id %s', async (id) => {
+    at(`/explorer/${id}`);
+    expect(await screen.findByRole('heading', { name: 'ไม่พบข้อมูล' })).toBeInTheDocument();
+  });
+
   it('opens the details panel for a unit picked from the list', async () => {
     at('/explorer/1');
     await userEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: /^ห้อง A-1805 / }));

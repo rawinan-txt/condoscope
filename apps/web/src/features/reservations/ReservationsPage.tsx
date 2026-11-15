@@ -29,7 +29,7 @@ function remove(id: number) {
 
 export default function ReservationsPage() {
   const ids = useReservationIds();
-  const [initial] = useState(ids); // what to fetch: reservations are only removed on this page, never added
+  const [initial] = useState(() => ids.slice(0, 50)); // the ids come from the visitor's own storage: cap the requests // what to fetch: reservations are only removed on this page, never added
   const r = useResource(() => loadReserved(initial), []);
 
   return (
