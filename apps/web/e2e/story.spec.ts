@@ -7,7 +7,8 @@ test.use({ storageState: { cookies: [], origins: [] } });
 
 const FREE = data.units.filter((u) => u.status === 'available').length;
 const SEARCH = 'ชื่อโครงการหรือทำเล';
-const SKIP = 'ข้ามการแนะนำ';
+// the browser puts a space between the visible word and the hidden rest: "ข้าม การแนะนำ"
+const SKIP = /^ข้าม\s?การแนะนำ$/;
 const INTRO_H1 = 'เลือกคอนโดผ่านตัวตึก 3 มิติ';
 
 /** The device the intro sees: a strong one gets the live 3D, a weak one the stills (the CI runner has 2 cores, so this is pinned). */

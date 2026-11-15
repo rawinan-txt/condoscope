@@ -17,7 +17,7 @@ const free = data.units.filter((u) => u.status === 'available').length;
 const visit = (path = '/') => render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
 const reduce = (on: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({ matches: on && q.includes('reduce'), addEventListener() {}, removeEventListener() {} }));
 const SEARCH = 'ชื่อโครงการหรือทำเล';
-const skip = () => screen.findByRole('button', { name: 'ข้ามการแนะนำ' });
+const skip = () => screen.findByRole('button', { name: /^ข้าม\s?การแนะนำ$/ });
 
 beforeEach(() => { localStorage.removeItem(INTRO_KEY); reduce(false); }); // the shared setup makes every test a returning visitor
 
@@ -80,7 +80,7 @@ describe('leaving the intro', () => {
     visit();
     await userEvent.click(await skip());
     expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'ข้ามการแนะนำ' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
     expect(localStorage.getItem(INTRO_KEY)).toBe('seen');
   });
 
@@ -95,7 +95,7 @@ describe('leaving the intro', () => {
     localStorage.setItem(INTRO_KEY, 'seen');
     visit();
     expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'ข้ามการแนะนำ' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
   });
 
   it('with storage blocked the intro still shows, the skip button works and the intro does not come back in the visit', async () => {
@@ -113,7 +113,7 @@ describe('only the home page has the intro', () => {
     visit(path);
     await screen.findByRole('main');
     await new Promise((r) => setTimeout(r, 50));
-    expect(screen.queryByRole('button', { name: 'ข้ามการแนะนำ' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'เลือกคอนโดผ่านตัวตึก 3 มิติ' })).toBeNull();
     expect(localStorage.getItem(INTRO_KEY)).toBeNull(); // visiting another page does not count as having seen it
   });
