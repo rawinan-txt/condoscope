@@ -1,5 +1,5 @@
-import type { Project } from '@condoscope/shared';
-import { useMemo, useRef, useState } from 'react';
+import type { ExplorerPayload, Project } from '@condoscope/shared';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import HeroImage, { projectHero } from '../../components/HeroImage';
 import { scrimBackground } from '../../components/theme';
@@ -8,11 +8,14 @@ import { useResource } from '../../hooks/useResource';
 import { hasWebGL } from '../../lib/hasWebGL';
 import { getExplorer } from '../../services/api';
 import Counter from './Counter';
+import ThreeBoundary from '../explorer/ThreeBoundary';
 import { storyOf, type Story as StoryData } from './story';
 import StoryStills from './StoryStills';
-import { chapterAt, countAt, type Chapter } from './timeline';
+import { chapterAt, countAt, crossfadeToScene, litFloors, CHAPTER_START, type Chapter } from './timeline';
 import { chooseTier, type TierEnv } from './tier';
 import { useScrollProgress } from './useScrollProgress';
+
+const StoryScene = lazy(() => import('./StoryScene'));
 
 function readEnv(reducedMotion: boolean): TierEnv {
   const nav = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string }; deviceMemory?: number };
@@ -35,16 +38,22 @@ const ORDER = Object.keys(TEXT) as Chapter[];
 export default function StoryBody({ project }: { project: Project }) {
   const r = useResource(() => getExplorer(project.id), [project.id]);
   if (r.state === 'loading') return <div className="h-svh" aria-hidden />;
-  const story = r.state === 'ok' ? storyOf(r.data) : null;
-  return story ? <Told project={project} story={story} /> : null;
+  if (r.state !== 'ok') return null;
+  const story = storyOf(r.data);
+  return story ? <Told project={project} story={story} data={r.data} /> : null;
 }
 
-function Told({ project, story }: { project: Project; story: StoryData }) {
+let sceneFailed = false; // once the 3D could not keep up or failed, the stills stay for the rest of the visit
+
+function Told({ project, story, data }: { project: Project; story: StoryData; data: ExplorerPayload }) {
   const reduced = useReducedMotion();
-  const tier = useMemo(() => chooseTier(readEnv(reduced)), [reduced]);
+  const [failed, setFailed] = useState(sceneFailed);
+  const chosen = useMemo(() => chooseTier(readEnv(reduced)), [reduced]);
+  const tier = chosen === 'live' && failed ? 'stills' : chosen;
+  const pRef = useRef(0);
   const track = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0); // progress in hundredths: at most 101 renders for the whole scroll
-  useScrollProgress(track, (v) => setStep(Math.round(v * 100)));
+  useScrollProgress(track, (v) => { pRef.current = v; setStep(Math.round(v * 100)); });
   const p = tier === 'static' ? 1 : step / 100;
   const chapter = chapterAt(p);
   const count = countAt(p, story.available);
@@ -76,6 +85,15 @@ function Told({ project, story }: { project: Project; story: StoryData }) {
       <div className="story-stage sticky top-0 h-svh overflow-hidden">
         {skip}
         <StoryStills p={p} project={project} />
+        {tier === 'live' && (
+          <div className="absolute inset-0" style={{ opacity: crossfadeToScene(p) }}>
+            <ThreeBoundary onError={() => { sceneFailed = true; setFailed(true); }} fallback={null}>
+              <Suspense fallback={null}>
+                <StoryScene data={data} story={story} p={pRef} lit={p >= CHAPTER_START.lights ? litFloors(p, story.building.first_res_floor, story.building.last_res_floor) : undefined} onFailure={() => { sceneFailed = true; setFailed(true); }} />
+              </Suspense>
+            </ThreeBoundary>
+          </div>
+        )}
         <div className="absolute inset-0" style={{ background: scrimBackground }} aria-hidden />
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-16">
           <div className="grid">

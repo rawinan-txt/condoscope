@@ -9,6 +9,8 @@ const GOOD = [
   chunk('Building3D-a.js', { gzipBytes: 302 * KB }),
   chunk('MapView-a.js', { gzipBytes: 294 * KB }),
   chunk('fallback-a.js', { gzipBytes: 28 * KB }),
+  chunk('StoryBody-a.js', { gzipBytes: 3 * KB }),
+  chunk('StoryScene-a.js', { gzipBytes: 2 * KB }),
 ];
 
 describe('evaluateBundles', () => {
@@ -39,11 +41,18 @@ describe('evaluateBundles', () => {
   });
 
   it('the 3D, map and fallback-data chunks must exist and must not be loaded at start', () => {
-    for (const prefix of ['Building3D', 'MapView', 'fallback']) {
+    for (const prefix of ['Building3D', 'MapView', 'fallback', 'StoryBody', 'StoryScene']) {
       const missing = GOOD.filter((c) => !c.name.startsWith(prefix));
       expect(evaluateBundles(missing).join('\n'), `${prefix} missing`).toMatch(new RegExp(prefix));
       const eager = GOOD.map((c) => (c.name.startsWith(prefix) ? { ...c, initial: true } : c));
       expect(evaluateBundles(eager).join('\n'), `${prefix} eager`).toMatch(new RegExp(prefix));
+    }
+  });
+
+  it('each story chunk has its own budget (three.js is shared with the explorer and not counted)', () => {
+    for (const prefix of ['StoryBody', 'StoryScene']) {
+      const over = GOOD.map((c) => (c.name.startsWith(prefix) ? { ...c, gzipBytes: BUDGETS.storyGzip + 1 } : c));
+      expect(evaluateBundles(over).join(' '), prefix).toMatch(new RegExp(prefix));
     }
   });
 });
