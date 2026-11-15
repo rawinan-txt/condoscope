@@ -57,11 +57,30 @@ describe('github workflows', () => {
     expect(text).toMatch(/id-token:\s*write/);
   });
 
-  it('seed-db only runs by hand and needs the word SEED', () => {
-    const { doc, text } = load('seed-db.yml');
+  it('seed-db only runs by hand and asks for a confirmation input', () => {
+    const { doc } = load('seed-db.yml');
     expect(Object.keys(doc.on)).toEqual(['workflow_dispatch']);
     expect(doc.on.workflow_dispatch.inputs.confirm).toBeDefined();
-    expect(text).toMatch(/inputs\.confirm\s*==\s*'SEED'/);
+  });
+
+  it('seed-db checks SEED with a case-sensitive step that fails loudly (a job-level `==` ignores case and a skipped job looks green)', () => {
+    const { doc } = load('seed-db.yml');
+    const job = doc.jobs.seed;
+    expect(job.if).toBeUndefined();
+    const first = job.steps[0];
+    expect(first.env.CONFIRM).toBe('${{ inputs.confirm }}');
+    expect(first.run).toMatch(/\[\s+"\$CONFIRM"\s+=\s+SEED\s+\]/);
+    expect(first.run).toMatch(/exit 1/);
+  });
+
+  it('jobs that hold the Cloudflare token do not leave the GitHub token in .git (persist-credentials: false)', () => {
+    for (const f of ['deploy-api.yml', 'seed-db.yml']) {
+      const { doc } = load(f);
+      const steps = Object.values<any>(doc.jobs).flatMap((j) => j.steps ?? []);
+      const checkouts = steps.filter((st) => String(st.uses).startsWith('actions/checkout@'));
+      expect(checkouts.length).toBeGreaterThan(0);
+      for (const c of checkouts) expect(c.with?.['persist-credentials']).toBe(false);
+    }
   });
 
   it('seed-db and deploy-api share one concurrency group so remote D1 jobs never overlap or double up', () => {

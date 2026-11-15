@@ -12,10 +12,16 @@ concurrency: { group: d1-remote, cancel-in-progress: false }
 jobs:
   seed:
     name: 'Seed REAL database (~12,000 row writes, free limit 100,000/day)'
-    if: inputs.confirm == 'SEED'
     runs-on: ubuntu-latest
     steps:
+      # exact case on purpose: a job-level `==` ignores case, and a skipped job would look like a green run
+      - name: Confirm the word SEED was typed
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: '[ "$CONFIRM" = SEED ] || { echo "Type exactly SEED (capitals) to seed the real database."; exit 1; }'
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
