@@ -42,6 +42,16 @@ describe('HomePage', () => {
     expect(document.querySelector('canvas')).toBeNull();
   });
 
+  it('puts the story after the search hero and before the popular areas (spec 8.1)', async () => {
+    await openHome();
+    const story = await screen.findByRole('button', { name: 'ข้ามส่วนนี้' });
+    const hero = screen.getByRole('heading', { level: 1 });
+    const areas = screen.getByRole('heading', { name: 'ทำเลยอดนิยม' });
+    expect(hero.compareDocumentPosition(story) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(story.compareDocumentPosition(areas) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector('canvas')).toBeNull();
+  });
+
   it('searches Thai text', async () => {
     await openHome();
     await userEvent.type(screen.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' }), 'อารีย์');

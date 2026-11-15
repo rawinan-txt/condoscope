@@ -5,6 +5,7 @@ import ProjectCard from '../../components/ProjectCard';
 import { useResource } from '../../hooks/useResource';
 import { useReveal } from '../../hooks/useReveal';
 import { searchProjects } from '../../services/api';
+import StorySection from '../story/StorySection';
 import Hero from './Hero';
 
 export default function HomePage() {
@@ -20,6 +21,7 @@ export default function HomePage() {
   return (
     <>
       <Hero projects={projects} />
+      {featured[0] && <StorySection project={featured[0]} />}
       <div className="mx-auto max-w-6xl space-y-24 px-4 py-20">
         <Section id="areas-h" title="ทำเลยอดนิยม">
           <ul className="flex flex-wrap gap-x-8 gap-y-3">

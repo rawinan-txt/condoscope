@@ -2,7 +2,8 @@ import type { Building, Dataset, UnitView } from '@condoscope/shared';
 import { describe, expect, it } from 'vitest';
 import fallback from '../../data/fallback.json';
 import { homeView, projectBounds, unitViewGoal } from '../explorer/scene/layout';
-import { chapterAt, countAt, crossfadeToScene, diveGoal, interiorReveal, litFloors, orbitPose, pickShowcaseUnit } from './timeline';
+import { diveGoal, orbitPose } from './poses';
+import { chapterAt, countAt, crossfadeToScene, interiorReveal, litFloors, pickShowcaseUnit } from './timeline';
 
 const data = fallback as unknown as Dataset;
 const b: Building = data.buildings.find((x) => x.project_id === 1)!;
