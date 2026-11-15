@@ -38,7 +38,7 @@ describe('sanitizeSearchParams', () => {
   it('never leaves half an emoji when the cut falls inside one', () => {
     const r = sanitizeSearchParams({ q: 'a'.repeat(99) + '😀😀' });
     expect(r.q).toBe('a'.repeat(99));
-    expect(r.q!.isWellFormed()).toBe(true);
+    expect(r.q).not.toMatch(/[\uD800-\uDFFF]/);
     expect(sanitizeSearchParams({ q: 'a'.repeat(98) + '😀' }).q).toBe('a'.repeat(98) + '😀');
   });
 
