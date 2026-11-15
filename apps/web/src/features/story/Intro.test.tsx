@@ -5,7 +5,6 @@ import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App';
 import fallback from '../../data/fallback.json';
-import { hasSeenIntro, INTRO_KEY } from '../../lib/intro';
 import * as api from '../../services/api';
 import Counter from './Counter';
 import { stillOpacities } from './stills';
@@ -17,15 +16,18 @@ const free = data.units.filter((u) => u.status === 'available').length;
 const visit = (path = '/') => render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>);
 const reduce = (on: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({ matches: on && q.includes('reduce'), addEventListener() {}, removeEventListener() {} }));
 const SEARCH = 'ชื่อโครงการหรือทำเล';
-const skip = () => screen.findByRole('button', { name: /^ข้าม\s?การแนะนำ$/ });
+const skip = () => screen.findByRole('button', { name: 'ข้ามไปค้นหา' });
 
-beforeEach(() => { localStorage.removeItem(INTRO_KEY); reduce(false); }); // the shared setup makes every test a returning visitor
+beforeEach(() => reduce(false));
 
-describe('the intro for a first visit', () => {
-  it('is shown at "/" with no search box, and draws no canvas on a modest device', async () => {
+describe('the story at the top of the home page', () => {
+  it('is shown at "/" every time, the search box comes after it, and no canvas is drawn on a modest device', async () => {
     visit();
-    expect(await screen.findByRole('heading', { level: 1, name: 'เลือกคอนโดผ่านตัวตึก 3 มิติ' })).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: SEARCH })).toBeNull();
+    const title = await screen.findByRole('heading', { level: 1, name: 'เลือกคอนโดผ่านตัวตึก 3 มิติ' });
+    const search = await screen.findByRole('textbox', { name: SEARCH });
+    expect(title.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelectorAll('h1')).toHaveLength(1);
+    expect(search.closest('[data-intro]')).toBeNull(); // nothing of the search floats over the story
     expect(document.querySelector('canvas')).toBeNull();
   });
 
@@ -75,62 +77,48 @@ describe('the intro for a first visit', () => {
   });
 });
 
-describe('leaving the intro', () => {
-  it('skip shows the normal home page with the search box, and remembers it', async () => {
+describe('skipping to the search', () => {
+  it('"ข้ามไปค้นหา" is first in the tab order and visible', async () => {
+    visit();
+    const button = await skip();
+    expect(button).toBeVisible();
+    await userEvent.tab();
+    expect(button).toHaveFocus();
+  });
+
+  it('skip puts the cursor in the first search field', async () => {
     visit();
     await userEvent.click(await skip());
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
-    expect(localStorage.getItem(INTRO_KEY)).toBe('seen');
+    expect(await screen.findByRole('textbox', { name: SEARCH })).toHaveFocus();
   });
 
   it('the last chapter has "เริ่มหาคอนโด", which does the same', async () => {
     visit();
     await userEvent.click(await screen.findByRole('button', { name: 'เริ่มหาคอนโด' }));
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(hasSeenIntro()).toBe(true);
+    expect(await screen.findByRole('textbox', { name: SEARCH })).toHaveFocus();
   });
 
-  it('the next visit goes straight to the home page', async () => {
-    localStorage.setItem(INTRO_KEY, 'seen');
-    visit();
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
-  });
-
-  it('with storage blocked the intro still shows, the skip button works and the intro does not come back in the visit', async () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked'); });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked'); });
+  it('remembers nothing: no storage is written', async () => {
+    const set = vi.spyOn(Storage.prototype, 'setItem');
     visit();
     await userEvent.click(await skip());
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
-    expect(hasSeenIntro()).toBe(true);
+    expect(set).not.toHaveBeenCalled();
   });
 });
 
-describe('only the home page has the intro', () => {
-  it.each(['/search', '/project/1', '/explorer/1', '/unit/1', '/reservations'])('%s opens without it, even for a first-time visitor', async (path) => {
+describe('only the home page has the story', () => {
+  it.each(['/search', '/project/1', '/explorer/1', '/unit/1', '/reservations'])('%s opens without it', async (path) => {
     visit(path);
     await screen.findByRole('main');
     await new Promise((r) => setTimeout(r, 50));
-    expect(screen.queryByRole('button', { name: /^ข้าม\s?การแนะนำ$/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'ข้ามไปค้นหา' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'เลือกคอนโดผ่านตัวตึก 3 มิติ' })).toBeNull();
-    expect(localStorage.getItem(INTRO_KEY)).toBeNull(); // visiting another page does not count as having seen it
   });
-});
 
-describe('seeing the intro again', () => {
-  it('the footer has a link to it from every page', async () => {
-    localStorage.setItem(INTRO_KEY, 'seen');
+  it('there is no replay page and no footer link any more', async () => {
     visit('/search');
-    expect(await screen.findByRole('link', { name: 'ดูแนะนำอีกครั้ง' })).toHaveAttribute('href', '/intro');
-  });
-
-  it('/intro shows it to a returning visitor, and finishing goes to the home page', async () => {
-    localStorage.setItem(INTRO_KEY, 'seen');
-    visit('/intro');
-    await userEvent.click(await skip());
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
+    await screen.findByRole('main');
+    expect(screen.queryByRole('link', { name: 'ดูแนะนำอีกครั้ง' })).toBeNull();
   });
 });
 
@@ -145,7 +133,7 @@ describe('with reduced motion', () => {
     expect(await screen.findByTestId('story-count')).toHaveTextContent(String(free));
     expect(await skip()).toBeVisible();
     await userEvent.click(within(slides).getByRole('button', { name: 'เริ่มหาคอนโด' }));
-    expect(await screen.findByRole('textbox', { name: SEARCH })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: SEARCH })).toHaveFocus();
   });
 });
 

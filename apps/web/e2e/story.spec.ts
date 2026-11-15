@@ -2,13 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { data } from './helpers';
 
-// These tests are first-time visitors: empty storage (the other specs start with the intro already seen, see playwright.config.ts).
-test.use({ storageState: { cookies: [], origins: [] } });
-
 const FREE = data.units.filter((u) => u.status === 'available').length;
 const SEARCH = 'ชื่อโครงการหรือทำเล';
-// the browser puts a space between the visible word and the hidden rest: "ข้าม การแนะนำ"
-const SKIP = /^ข้าม\s?การแนะนำ$/;
+const SKIP = 'ข้ามไปค้นหา';
 const INTRO_H1 = 'เลือกคอนโดผ่านตัวตึก 3 มิติ';
 
 /** The device the intro sees: a strong one gets the live 3D, a weak one the stills (the CI runner has 2 cores, so this is pinned). */
@@ -24,20 +20,21 @@ const scrollTo = (page: Page, fraction: number) => page.evaluate((f) => {
   window.scrollTo(0, top + (track.getBoundingClientRect().height - document.documentElement.clientHeight) * f);
 }, fraction);
 
-const seen = (page: Page) => page.evaluate(() => localStorage.getItem('condoscope.intro'));
 const introShown = (page: Page) => expect(page.getByRole('heading', { level: 1, name: INTRO_H1 })).toBeAttached();
-const homeShown = async (page: Page) => {
-  await expect(page.getByRole('textbox', { name: SEARCH })).toBeVisible();
-  await expect(page.getByRole('button', { name: SKIP })).toHaveCount(0);
+/** After "skip": the search box is on screen with the cursor in it. */
+const searchFocused = async (page: Page) => {
+  const box = page.getByRole('textbox', { name: SEARCH });
+  await expect(box).toBeInViewport();
+  await expect(box).toBeFocused();
 };
 
 for (const [w, h] of [[320, 640], [390, 844], [1400, 900]] as const) {
-  test(`ครั้งแรกที่ ${w}×${h}: เห็น intro เต็มจอ ไม่มีช่องค้นหา ปุ่มข้ามเห็นและเป็น Tab แรก ไม่เลื่อนแนวนอน`, async ({ page }) => {
+  test(`ที่ ${w}×${h}: เห็นเรื่องเล่าเต็มจอ ช่องค้นหาไม่ซ้อนอยู่บนภาพ ปุ่มข้ามเห็นและเป็น Tab แรก ไม่เลื่อนแนวนอน`, async ({ page }) => {
     await device(page, 'weak');
     await page.setViewportSize({ width: w, height: h });
     await page.goto('');
     await introShown(page);
-    await expect(page.getByRole('textbox', { name: SEARCH })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: SEARCH })).not.toBeInViewport(); // the search box is below the story
     const skip = page.getByRole('button', { name: SKIP });
     await expect(skip).toBeVisible();
     const box = await skip.boundingBox();
@@ -49,19 +46,19 @@ for (const [w, h] of [[320, 640], [390, 844], [1400, 900]] as const) {
   });
 }
 
-test('กดข้าม: ไปหน้าแรกปกติที่มีช่องค้นหา จำไว้ แล้วครั้งที่สองไม่เห็น intro', async ({ page }) => {
+test('กดข้ามไปค้นหา: เลื่อนไปที่ช่องค้นหาและโฟกัสช่องแรก ไม่จำอะไรไว้ แล้วรีเฟรชก็เจอเรื่องเล่าอีก', async ({ page }) => {
   await device(page, 'weak');
   await page.goto('');
   await introShown(page);
   await page.getByRole('button', { name: SKIP }).click();
-  await homeShown(page);
-  expect(await seen(page)).toBe('seen');
+  await searchFocused(page);
+  expect(await page.evaluate(() => localStorage.getItem('condoscope.intro'))).toBeNull();
   await page.reload();
-  await homeShown(page);
-  await expect(page.getByRole('heading', { name: INTRO_H1 })).toHaveCount(0);
+  await introShown(page);
+  await expect(page.getByRole('textbox', { name: SEARCH })).not.toBeInViewport();
 });
 
-test('บทสุดท้าย "เริ่มหาคอนโด" ไปหน้าแรกปกติ และจำไว้', async ({ page }) => {
+test('บทสุดท้าย "เริ่มหาคอนโด" ไปที่ช่องค้นหาเหมือนปุ่มข้าม', async ({ page }) => {
   await device(page, 'weak');
   await page.goto('');
   await introShown(page);
@@ -69,12 +66,20 @@ test('บทสุดท้าย "เริ่มหาคอนโด" ไป�
   await expect(page.getByTestId('story-count')).toHaveText(String(FREE));
   await expect(page.getByText(`ห้องว่างรวมทุกโครงการ ${FREE} ห้อง`)).toBeAttached();
   await page.getByRole('button', { name: 'เริ่มหาคอนโด' }).click();
-  await homeShown(page);
-  expect(await seen(page)).toBe('seen');
+  await searchFocused(page);
+});
+
+test('เลื่อนผ่านเรื่องเล่าลงมาเอง: ปุ่มข้ามหายไป ช่องค้นหาและเนื้อหาเดิมของหน้าแรกอยู่ต่อท้าย', async ({ page }) => {
+  await device(page, 'weak');
+  await page.goto('');
+  await introShown(page);
+  await page.getByRole('textbox', { name: SEARCH }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: SKIP })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'โครงการทั้งหมด' })).toBeAttached();
 });
 
 for (const hash of ['#/search', '#/project/1', '#/explorer/1', '#/unit/1', '#/map', '#/reservations']) {
-  test(`ลิงก์ตรง ${hash} ไม่เจอ intro (แม้เป็นครั้งแรก) และไม่นับว่าดูแล้ว`, async ({ page }) => {
+  test(`ลิงก์ตรง ${hash} ไม่เกี่ยวกับเรื่องเล่า`, async ({ page }) => {
     await device(page, 'weak');
     await page.route('https://tiles.openfreemap.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [] }) }));
     await page.goto(hash);
@@ -82,34 +87,8 @@ for (const hash of ['#/search', '#/project/1', '#/explorer/1', '#/unit/1', '#/ma
     await page.waitForTimeout(500);
     await expect(page.getByRole('button', { name: SKIP })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: INTRO_H1 })).toHaveCount(0);
-    expect(await seen(page)).toBeNull();
   });
 }
-
-test('ลิงก์ "ดูแนะนำอีกครั้ง" ที่ Footer เปิด intro ได้แม้ดูแล้ว และข้ามแล้วกลับหน้าแรก', async ({ page }) => {
-  await device(page, 'weak');
-  await page.addInitScript(() => localStorage.setItem('condoscope.intro', 'seen'));
-  await page.goto('#/search');
-  await page.getByRole('link', { name: 'ดูแนะนำอีกครั้ง' }).click();
-  await expect(page).toHaveURL(/#\/intro$/);
-  await introShown(page);
-  await page.getByRole('button', { name: SKIP }).click();
-  await expect(page).toHaveURL(/#\/$/);
-  await homeShown(page);
-});
-
-test('localStorage ใช้ไม่ได้: ยังเห็น intro ปุ่มข้ามใช้ได้ และไม่เด้งกลับมาในรอบนั้น', async ({ page }) => {
-  await device(page, 'weak');
-  await page.addInitScript(() => {
-    const boom = () => { throw new Error('storage blocked'); };
-    Storage.prototype.getItem = boom;
-    Storage.prototype.setItem = boom;
-  });
-  await page.goto('');
-  await introShown(page);
-  await page.getByRole('button', { name: SKIP }).click();
-  await homeShown(page);
-});
 
 test('ลดการเคลื่อนไหว: สไลด์นิ่ง ไม่มีเวทีปัก ไม่มี canvas ไม่โหลดโค้ด 3D ปุ่มข้ามใช้ได้', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -125,7 +104,7 @@ test('ลดการเคลื่อนไหว: สไลด์นิ่ง
   await page.waitForTimeout(1000);
   expect(seenCode).toEqual([]);
   await page.getByRole('button', { name: SKIP }).click();
-  await homeShown(page);
+  await searchFocused(page);
 });
 
 test('เครื่องอ่อน: ไม่ดาวน์โหลดโค้ด 3D เลยตอนเปิดหน้าและตอนเลื่อน', async ({ page }) => {
@@ -196,7 +175,7 @@ test('3D ไม่วาดซ้ำเมื่อหยุดเลื่อ�
   expect(await page.evaluate(() => (window as unknown as { __draws: number }).__draws)).toBe(before);
 });
 
-test('ไม่ล็อกการเลื่อน: คีย์บอร์ด End/PageDown ใช้ได้ และปุ่มข้ามยังกดได้กลางเรื่อง', async ({ page }) => {
+test('ไม่ล็อกการเลื่อน: คีย์บอร์ด PageDown/End ใช้ได้ และปุ่มข้ามยังกดได้กลางเรื่อง', async ({ page }) => {
   await device(page, 'weak');
   await page.goto('');
   await introShown(page);
@@ -206,12 +185,11 @@ test('ไม่ล็อกการเลื่อน: คีย์บอร์
   await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 }).toBeGreaterThan(1000);
   await scrollTo(page, 0.5);
   await page.getByRole('button', { name: SKIP }).click();
-  await homeShown(page);
+  await searchFocused(page);
 });
 
 test('การ์ด → หน้าโครงการ เรียก startViewTransition เมื่อไม่ลดการเคลื่อนไหว (HashRouter ใช้ได้จริงในเบราว์เซอร์)', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('condoscope.intro', 'seen');
     (window as unknown as { __vt: number }).__vt = 0;
     const real = document.startViewTransition.bind(document);
     (document as unknown as { startViewTransition: unknown }).startViewTransition = (cb: () => void) => { (window as unknown as { __vt: number }).__vt++; return real(cb); };
@@ -225,7 +203,6 @@ test('การ์ด → หน้าโครงการ เรียก star
 test('ลดการเคลื่อนไหว: การ์ดไม่เรียก startViewTransition และยังไปหน้าโครงการได้', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => {
-    localStorage.setItem('condoscope.intro', 'seen');
     (window as unknown as { __vt: number }).__vt = 0;
     const real = document.startViewTransition?.bind(document);
     (document as unknown as { startViewTransition: unknown }).startViewTransition = (cb: () => void) => { (window as unknown as { __vt: number }).__vt++; return real!(cb); };
@@ -236,12 +213,12 @@ test('ลดการเคลื่อนไหว: การ์ดไม่เ
   expect(await page.evaluate(() => (window as unknown as { __vt: number }).__vt)).toBe(0);
 });
 
-test('axe บน intro ที่ต้น/กลาง/ปลาย: ไม่มี serious/critical', async ({ page }) => {
+test('axe บนหน้าแรก (เรื่องเล่า ต้น/กลาง/ปลาย และส่วนค้นหา): ไม่มี serious/critical', async ({ page }) => {
   await device(page, 'weak');
   await page.goto('');
   await introShown(page);
-  for (const f of [0, 0.5, 1]) {
-    await scrollTo(page, f);
+  for (const f of [0, 0.5, 1, 'search'] as const) {
+    if (f === 'search') await page.getByRole('button', { name: SKIP }).click(); else await scrollTo(page, f);
     await page.waitForTimeout(900);
     const result = await new AxeBuilder({ page }).exclude('canvas').analyze();
     const bad = result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');

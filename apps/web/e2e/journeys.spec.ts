@@ -8,8 +8,9 @@ const MINIMAL_STYLE = { version: 8, sources: {}, layers: [{ id: 'bg', type: 'bac
 const stubMapStyle = (page: Page) =>
   page.route('https://tiles.openfreemap.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MINIMAL_STYLE) }));
 
-test('ทางเดินหลัก: หน้าแรก → ค้นหา → โครงการ → ตึก 3D → เลือกห้อง → รายละเอียดห้อง', async ({ page }) => {
+test('ทางเดินหลัก: หน้าแรก (เรื่องเล่า → ข้าม) → ค้นหา → โครงการ → ตึก 3D → เลือกห้อง → รายละเอียดห้อง', async ({ page }) => {
   await page.goto('');
+  await page.getByRole('button', { name: 'ข้ามไปค้นหา' }).click(); // the home page starts with the story
   await page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' }).fill('อารีย์');
   await page.getByRole('button', { name: 'ค้นหา' }).click();
   await expect(page).toHaveURL(/#\/search\?q=/);
@@ -125,11 +126,13 @@ test('ภาพโครงการและภาพห้องมาจา�
 });
 
 for (const [w, h] of [[390, 844], [320, 640]]) {
-  test(`หน้าแรกบนจอ ${w}×${h}: ช่องค้นหาและปุ่มอยู่ในจอแรก ไม่มีเลื่อนแนวนอน`, async ({ page }) => {
+  test(`หน้าแรกบนจอ ${w}×${h}: กดข้ามแล้วช่องค้นหาและปุ่มอยู่ในจอ ไม่มีเลื่อนแนวนอน`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await page.goto('');
+    await page.getByRole('button', { name: 'ข้ามไปค้นหา' }).click(); // the home page starts with the story
     const box = page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' });
     await expect(box).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'ค้นหา' })).toBeInViewport();
     await expect(page.getByRole('button', { name: 'ค้นหา' })).toBeAttached();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
@@ -140,6 +143,7 @@ test('ภาพ Hero โหลดไม่ได้: ช่องค้นหา
   await page.route(/images\/projects\/[a-z-]+\.jpg/, (r) => r.abort());
   await page.goto('');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'ข้ามไปค้นหา' }).click(); // the home page starts with the story
   await page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' }).fill('อารีย์');
   await page.getByRole('button', { name: 'ค้นหา' }).click();
   await expect(page).toHaveURL(/#\/search\?q=/);

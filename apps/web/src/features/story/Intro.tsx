@@ -4,10 +4,8 @@ import { Link } from 'react-router';
 import AiBadge from '../../components/AiBadge';
 import { scrimBackground } from '../../components/theme';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { useResource } from '../../hooks/useResource';
 import { hasWebGL } from '../../lib/hasWebGL';
-import { useFinishIntro } from '../../lib/intro';
-import { searchProjects } from '../../services/api';
+import { skipToSearch } from '../../lib/skipToSearch';
 import ThreeBoundary from '../explorer/ThreeBoundary';
 import Counter from './Counter';
 import type { Anchor } from './StoryScene';
@@ -42,23 +40,20 @@ const AVAILABLE_LABEL = 'ห้องว่างรวมทุกโครง�
 let sceneFailed = false; // once the 3D could not keep up or failed, the stills stay for the rest of the visit
 
 /**
- * The intro a first-time visitor sees instead of the home page: a full-screen tower, then a scroll through how the site works,
- * ending in "เริ่มหาคอนโด" which opens the normal home page with the search box. The skip button lives in the layout (always visible,
- * first in the tab order). Nothing holds the scroll back. With reduced motion it is still slides and loads no 3D code.
+ * The top of the home page, every visit: a full-screen tower, then a scroll through how the site works. It ends in "เริ่มหาคอนโด",
+ * which scrolls to the search box just below. The skip button lives in the layout (visible while the story is, first in the tab order).
+ * Nothing holds the scroll back. With reduced motion it is still slides and loads no 3D code.
  */
-export default function Intro() {
+export default function Intro({ projects }: { projects: Project[] }) {
   const reduced = useReducedMotion();
   const tier = useMemo(() => chooseTier(readEnv(reduced)), [reduced]);
-  const r = useResource(() => searchProjects({ limit: 50 }), []);
-  const projects = r.state === 'ok' ? r.data.items : [];
   return tier === 'static' ? <Slides projects={projects} /> : <Staged projects={projects} tier={tier} />;
 }
 
 function Finish({ first, unitId }: { first?: Project; unitId?: number }) {
-  const finish = useFinishIntro();
   return (
     <div className="flex flex-wrap gap-4">
-      <button type="button" onClick={finish} className="inline-block bg-champagne px-8 py-3 font-medium text-ink hover:bg-champagne-soft">เริ่มหาคอนโด</button>
+      <button type="button" onClick={skipToSearch} className="inline-block bg-champagne px-8 py-3 font-medium text-ink hover:bg-champagne-soft">เริ่มหาคอนโด</button>
       {first && <Link to={`/explorer/${first.id}${unitId ? `?unit=${unitId}` : ''}`} className="inline-block border border-white px-8 py-3 text-white hover:bg-white/10">ลองดูตึก 3 มิติ</Link>}
     </div>
   );
@@ -71,7 +66,7 @@ function Slides({ projects }: { projects: Project[] }) {
   const { totals, picks } = useStoryData(projects, 'static', 0);
   const base = import.meta.env.BASE_URL;
   return (
-    <section aria-label="แนะนำการใช้งานเว็บ" className="bg-ink text-white">
+    <section data-intro aria-label="แนะนำการใช้งานเว็บ" className="bg-ink text-white">
       <ol>
         {ORDER.map((c, i) => (
           <li key={c} className="relative isolate flex min-h-[80svh] items-end overflow-hidden border-b border-white/10">
@@ -111,7 +106,7 @@ function Staged({ projects, tier }: { projects: Project[]; tier: 'stills' | 'liv
   const total = data.totals?.available ?? null;
 
   return (
-    <div ref={track} className="story-track">
+    <div ref={track} data-intro className="story-track">
       <div className="story-stage sticky top-0 h-svh overflow-hidden bg-ink">
         <StoryStills p={p} fallback="images/home-hero.webp" />
         {live && shown.scene && (

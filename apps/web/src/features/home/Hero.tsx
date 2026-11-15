@@ -31,13 +31,13 @@ export function SearchBox({ projects }: { projects: Project[] }) {
 
   return (
   <div className="mx-auto w-full max-w-6xl px-4 pb-14 pt-24 md:pb-16">
-    <h1 className="reveal max-w-3xl text-4xl font-semibold leading-tight text-white md:text-6xl" ref={reveal}>ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย</h1>
+    <h2 className="reveal max-w-3xl text-4xl font-semibold leading-tight text-white md:text-6xl" ref={reveal}>ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย</h2>
     <p className="mt-4 max-w-xl text-white md:text-lg [@media(max-height:700px)]:hidden">โครงการจำลอง 5 แห่งในกรุงเทพฯ และปริมณฑล ดูตึก 3 มิติ เลือกห้อง ดูแปลน</p>
     <form onSubmit={submit} className="mt-8 bg-ivory p-4 text-ink shadow-2xl md:p-5">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] lg:items-end">
         <label className="block text-sm font-medium">
           ชื่อโครงการหรือทำเล
-          <input type="text" value={form.q} onChange={set('q')} maxLength={100} placeholder="เช่น อารีย์ หรือ Noventa" className={`${field} py-2.5`} />
+          <input type="text" data-home-search value={form.q} onChange={set('q')} maxLength={100} placeholder="เช่น อารีย์ หรือ Noventa" className={`${field} py-2.5`} />
         </label>
         <label className="block text-sm font-medium">จังหวัด
           <select value={form.province} onChange={set('province')} className={field}>

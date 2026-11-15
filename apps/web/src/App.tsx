@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router';
 import Layout from './components/Layout';
 import NotFound from './components/NotFound';
 import ExplorerPage from './features/explorer/ExplorerPage';
-import HomeGate, { IntroPage } from './features/home/HomeGate';
+import HomePage from './features/home/HomePage';
 import MapPage from './features/map/MapPage';
 import ProjectPage from './features/project/ProjectPage';
 import ReservationsPage from './features/reservations/ReservationsPage';
@@ -13,8 +13,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<HomeGate />} />
-        <Route path="intro" element={<IntroPage />} />
+        <Route index element={<HomePage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="map" element={<MapPage />} />
         <Route path="project/:projectId" element={<ProjectPage />} />

@@ -21,10 +21,11 @@ const where = () => screen.getByTestId('where').textContent!;
 const searchQuery = () => new URLSearchParams(where().split('?')[1] ?? '');
 
 describe('HomePage', () => {
-  it('follows the order of spec 8.1: hero search, popular areas, featured, all projects, map strip', async () => {
+  it('follows the order of spec 8.1: story, hero search, popular areas, featured, all projects, map strip', async () => {
     await openHome();
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'ทำเลยอดนิยม', 'โครงการแนะนำ', 'โครงการทั้งหมด', 'สำรวจโครงการบนแผนที่',
+      'ค้นหาและกรองได้ตามใจ', 'ดูทำเลบนแผนที่', 'เลือกห้องจากตัวตึก', 'ดูแปลนและภาพภายในห้อง', 'จองห้องแบบเดโม', // the story
+      'ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย', 'ทำเลยอดนิยม', 'โครงการแนะนำ', 'โครงการทั้งหมด', 'สำรวจโครงการบนแผนที่',
     ]);
     expect(screen.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' })).toBeInTheDocument();
   });
@@ -99,9 +100,9 @@ describe('HomePage', () => {
     expect(Object.fromEntries(searchQuery())).toEqual({ province: 'นนทบุรี', district: 'เมืองนนทบุรี', minPrice: '2000000' });
   });
 
-  it('the hero image is decorative, loaded with priority and the heading is a serif h1', async () => {
+  it('the hero image is decorative, loaded with priority and the heading is in the hero section', async () => {
     await openHome();
-    const hero = screen.getByRole('heading', { level: 1 }).closest('section')!;
+    const hero = screen.getByRole('heading', { name: 'ค้นหาคอนโดที่ใช่ แล้วเลือกห้องจากตัวตึกได้เลย' }).closest('section')!;
     expect(hero.querySelector('img')).toHaveAttribute('alt', '');
     expect(hero.querySelector('img')).toHaveAttribute('fetchpriority', 'high');
   });

@@ -6,8 +6,7 @@ import { open3D, panelTitle, visibleUnits } from './helpers';
 // README pictures. Only runs through `npm run screenshots` (SCREENSHOTS=1) so normal e2e runs do not rewrite tracked files.
 test.skip(!process.env.SCREENSHOTS, 'run with npm run screenshots');
 // README pictures show the full-quality scene at the desktop size, unlike the other specs (see playwright.config.ts)
-// returning visitor (no intro); the intro test below removes the mark
-test.use({ viewport: { width: 1400, height: 900 }, storageState: { cookies: [], origins: [{ origin: `http://localhost:${process.env.E2E_PORT ?? 4321}`, localStorage: [{ name: 'condoscope.intro', value: 'seen' }] }] } });
+test.use({ viewport: { width: 1400, height: 900 } });
 
 const dir = fileURLToPath(new URL('../../../docs/screenshots/', import.meta.url));
 const shot = (page: import('@playwright/test').Page, name: string) => page.screenshot({ path: `${dir}${name}.png` });
@@ -18,7 +17,8 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.route('https://tiles.openfreemap.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MINIMAL_STYLE) }));
 
   await page.goto('');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'ข้ามไปค้นหา' }).click(); // the home page starts with the story; the picture is of the search part
+  await expect(page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' })).toBeInViewport();
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(5500); // the hero image settles for 5 s
   await shot(page, 'home');
@@ -70,12 +70,11 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await shot(page, 'explorer-mobile');
 });
 
-// The first-visit intro at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
+// The story at the top of the home page, at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
 test('ภาพหน้าจอส่วนเล่าเรื่อง', async ({ page }) => {
   test.setTimeout(300_000);
   mkdirSync(dir, { recursive: true });
   await page.addInitScript(() => {
-    localStorage.removeItem('condoscope.intro'); // a first-time visitor
     Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
     Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
   });
