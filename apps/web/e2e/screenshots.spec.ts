@@ -6,7 +6,7 @@ import { open3D, panelTitle, visibleUnits } from './helpers';
 // README pictures. Only runs through `npm run screenshots` (SCREENSHOTS=1) so normal e2e runs do not rewrite tracked files.
 test.skip(!process.env.SCREENSHOTS, 'run with npm run screenshots');
 // README pictures show the full-quality scene at the desktop size, unlike the other specs (see playwright.config.ts)
-test.use({ viewport: { width: 1400, height: 900 }, storageState: { cookies: [], origins: [] } });
+test.use({ viewport: { width: 1400, height: 900 } });
 
 const dir = fileURLToPath(new URL('../../../docs/screenshots/', import.meta.url));
 const shot = (page: import('@playwright/test').Page, name: string) => page.screenshot({ path: `${dir}${name}.png` });
@@ -17,7 +17,8 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.route('https://tiles.openfreemap.org/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MINIMAL_STYLE) }));
 
   await page.goto('');
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.getByRole('button', { name: 'ข้ามไปค้นหา' }).click(); // the home page starts with the story; the picture is of the search part
+  await expect(page.getByRole('textbox', { name: 'ชื่อโครงการหรือทำเล' })).toBeInViewport();
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(5500); // the hero image settles for 5 s
   await shot(page, 'home');
@@ -67,4 +68,30 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.mouse.move(2, 2); // no hover tooltip on a phone
   await page.waitForTimeout(300);
   await shot(page, 'explorer-mobile');
+});
+
+// The story at the top of the home page, at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
+test('ภาพหน้าจอส่วนเล่าเรื่อง', async ({ page }) => {
+  test.setTimeout(300_000);
+  mkdirSync(dir, { recursive: true });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
+    Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
+  });
+  const scrollTo = (f: number) => page.evaluate((x) => {
+    const t = document.querySelector('.story-track')!;
+    window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY + (t.getBoundingClientRect().height - document.documentElement.clientHeight) * x);
+  }, f);
+  const review = process.env.STORY_REVIEW_DIR;
+  const sizes: [number, number, boolean][] = [[1400, 900, true], ...(review ? [[390, 844, false], [320, 640, false]] as [number, number, boolean][] : [])];
+  for (const [w, h, keep] of sizes) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('');
+    await expect(page.locator('.story-stage canvas')).toBeAttached({ timeout: 90_000 });
+    for (const [name, f] of [['intro-first', 0], ['intro-filter', 0.2], ['intro-tower', 0.58], ['intro-room', 0.84], ['intro-end', 1]] as const) {
+      await scrollTo(f);
+      await page.waitForTimeout(w === 1400 ? 4500 : 3000);
+      await page.screenshot({ path: keep ? `${dir}${name}.png` : `${review}/${name}-${w}.png` });
+    }
+  }
 });

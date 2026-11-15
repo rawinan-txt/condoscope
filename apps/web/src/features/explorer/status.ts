@@ -27,3 +27,8 @@ export function unitColorRole(
   if (x.filters.maxPrice !== null || x.filters.bedrooms !== null) return x.matches(u) ? { color: HIGHLIGHT.match, kind: 'match' } : { color: HIGHLIGHT.dim, kind: 'dim' };
   return { color: HIGHLIGHT.idle, kind: 'idle' };
 }
+
+/** Colour role in the home page story: free units glow champagne floor by floor (`lit` floors from the first residential floor), everything else is dark. */
+export function storyUnitRole(u: UnitView, firstResFloor: number, lit: number): { color: string; kind: 'status' | 'dim' } {
+  return u.status === 'available' && u.floor_number - firstResFloor < lit ? { color: '#e2cc9a', kind: 'status' } : { color: HIGHLIGHT.dim, kind: 'dim' };
+}

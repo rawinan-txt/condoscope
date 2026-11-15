@@ -1,6 +1,6 @@
-import { formatMillion, imageFile, UNIT_TYPE_LABEL, type ProjectDetailPayload } from '@condoscope/shared';
+import { formatMillion, imageFile, UNIT_TYPE_LABEL, type Project, type ProjectDetailPayload } from '@condoscope/shared';
 import { ArrowLeft } from 'lucide-react';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import AmenityIcon from '../../components/AmenityIcon';
 import HeroImage, { projectHero } from '../../components/HeroImage';
 import { scrimBackground } from '../../components/theme';
@@ -21,31 +21,49 @@ function galleryOf({ project, availability }: ProjectDetailPayload): GalleryItem
   return items;
 }
 
+/** The project a card passed along in router state, if it really is a project and the one this page shows (the state is the browser's history entry: never trust its shape). */
+function projectFromState(state: unknown, id: number): Project | null {
+  const p = (state as { project?: Partial<Project> } | null)?.project;
+  if (!p || typeof p !== 'object' || p.id !== id) return null;
+  const text = [p.name, p.neighborhood, p.district, p.province, p.address_display].every((v) => typeof v === 'string');
+  return text && (p.thumbnail_url === null || typeof p.thumbnail_url === 'string') ? (p as Project) : null;
+}
+
+function Header({ project }: { project: Project }) {
+  const hero = projectHero(project);
+  return (
+    <header className="relative isolate flex min-h-[60svh] items-end overflow-hidden bg-ink">
+      {hero && <div className="absolute inset-0 -z-20 overflow-hidden" style={{ viewTransitionName: 'project-hero' }}><HeroImage {...hero} priority className="hero-settle" /></div>}
+      <div className="absolute inset-0 -z-10" style={{ background: scrimBackground }} aria-hidden />
+      <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-24">
+        <Link to="/search" className="inline-flex items-center gap-1 text-sm text-white underline underline-offset-4"><ArrowLeft className="size-4" aria-hidden />กลับไปผลการค้นหา</Link>
+        <h1 className="mt-4 text-4xl text-white md:text-6xl">{project.name}</h1>
+        <p className="mt-2 text-lg text-white">{project.neighborhood} · {project.district} · {project.province}</p>
+        <p className="text-sm text-white">{project.address_display}</p>
+      </div>
+    </header>
+  );
+}
+
 export default function ProjectPage() {
   const { projectId } = useParams();
+  const { state } = useLocation();
   const r = useResource(() => getProject(Number(projectId)), [projectId]);
 
-  if (r.state === 'loading') return <div className="mx-auto max-w-5xl animate-pulse px-4 py-8"><div className="aspect-[16/9] rounded-lg bg-ink/5" /></div>;
+  if (r.state === 'loading') {
+    // arriving from a card: draw the hero and the name now, so the view transition has a real picture to land on
+    const early = projectFromState(state, Number(projectId));
+    return early ? <Header project={early} /> : <div className="mx-auto max-w-5xl animate-pulse px-4 py-8"><div className="aspect-[16/9] rounded-lg bg-ink/5" /></div>;
+  }
   if (r.state === 'missing') return <NotFound message="ไม่พบโครงการนี้" />;
   if (r.state === 'error') return <LoadError onRetry={r.retry} />;
 
   const d = r.data;
   const { project, buildings, amenities } = d;
   const explorer = buildings.some((b) => b.has_explorer);
-  const hero = projectHero(project);
-
   return (
     <div>
-      <header className="relative isolate flex min-h-[60svh] items-end overflow-hidden bg-ink">
-        {hero && <div className="absolute inset-0 -z-20 overflow-hidden"><HeroImage {...hero} priority className="hero-settle" /></div>}
-        <div className="absolute inset-0 -z-10" style={{ background: scrimBackground }} aria-hidden />
-        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-24">
-          <Link to="/search" className="inline-flex items-center gap-1 text-sm text-white underline underline-offset-4"><ArrowLeft className="size-4" aria-hidden />กลับไปผลการค้นหา</Link>
-          <h1 className="mt-4 text-4xl text-white md:text-6xl">{project.name}</h1>
-          <p className="mt-2 text-lg text-white">{project.neighborhood} · {project.district} · {project.province}</p>
-          <p className="text-sm text-white">{project.address_display}</p>
-        </div>
-      </header>
+      <Header project={project} />
 
       <div className="mx-auto grid max-w-6xl gap-x-12 gap-y-10 px-4 py-12 lg:grid-cols-[1fr_340px]">
         <aside className="lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:self-start">

@@ -50,3 +50,13 @@ header :focus-visible, footer :focus-visible { outline-color: var(--color-champa
   @keyframes hero-settle { from { scale: 1.06; } to { scale: 1; } }
   .hero-settle { animation: hero-settle 5s ease-out both; }
 }
+
+/* Story section: the track is as tall as the scroll it tells (svh, so the iOS address bar does not make it jump); the stage inside is sticky. */
+.story-track { height: 380svh; }
+@media (min-width: 768px) { .story-track { height: 500svh; } }
+
+/* Card to project hero (see ProjectCard): a slow, soft morph; off entirely for people who asked for less motion. */
+::view-transition-group(project-hero) { animation-duration: 600ms; animation-timing-function: ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

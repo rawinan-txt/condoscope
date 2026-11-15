@@ -2,6 +2,7 @@ import type { Facade } from '@condoscope/shared';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import OverlayPanel from '../../components/OverlayPanel';
+import { hasWebGL } from '../../lib/hasWebGL';
 import BuildingSvg from './BuildingSvg';
 import type { TimeOfDay } from './scene/time';
 import ThreeBoundary from './ThreeBoundary';
@@ -11,14 +12,6 @@ const Building3D = lazy(() => import('./Building3D'));
 
 const toggle = (on: boolean) =>
   `rounded-md px-3 py-1 text-sm ${on ? 'glass-accent' : 'border border-white/30 hover:bg-white/10'}`;
-
-function hasWebGL(): boolean {
-  try {
-    return !!document.createElement('canvas').getContext('webgl2');
-  } catch {
-    return false;
-  }
-}
 
 const KEY_DIR: Record<string, Direction> = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
 

@@ -18,7 +18,7 @@ import UnitTooltip from './UnitTooltip';
 import type { CutFloor, ExplorerApi } from './useExplorer';
 
 declare global {
-  interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null; cameraBusy(): boolean } }
+  interface Window { __condoscope?: { projectUnit(id: number): { x: number; y: number } | null; cameraBusy(): boolean; lookFrom(position: Vec3, target: Vec3): void } }
 }
 
 /** Set once the scene proved too slow, so switching 3D -> 2D -> 3D does not start in high quality again (and stall again). */
@@ -261,10 +261,16 @@ function SlowGuard({ onSlow }: { onSlow(): void }) {
 
 /** Test hook used by the Playwright success-criterion test. */
 function Probe({ x, unitsRef, busy }: { x: ExplorerApi; unitsRef: React.RefObject<InstancedMesh | null>; busy: React.MutableRefObject<boolean> }) {
-  const { camera, gl } = useThree();
+  const { camera, gl, invalidate } = useThree();
+  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null;
   useEffect(() => {
-    window.__condoscope = { projectUnit: (id) => screenPoint(x, id, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 3), cameraBusy: () => busy.current };
+    window.__condoscope = {
+      projectUnit: (id) => screenPoint(x, id, unitsRef.current, camera, gl.domElement.getBoundingClientRect(), 3),
+      cameraBusy: () => busy.current,
+      // used by the story-stills script to place the camera exactly
+      lookFrom: (position, target) => { camera.position.set(...position); controls?.target.set(...target); controls?.update(); invalidate(); },
+    };
     return () => { delete window.__condoscope; };
-  }, [x, camera, gl, unitsRef, busy]);
+  }, [x, camera, gl, unitsRef, busy, controls, invalidate]);
   return null;
 }

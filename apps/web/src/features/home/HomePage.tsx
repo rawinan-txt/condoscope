@@ -1,4 +1,5 @@
 import { Map } from 'lucide-react';
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { LoadError } from '../../components/NotFound';
 import ProjectCard from '../../components/ProjectCard';
@@ -7,11 +8,27 @@ import { useReveal } from '../../hooks/useReveal';
 import { searchProjects } from '../../services/api';
 import Hero from './Hero';
 
+// The story is a separate chunk so the entry stays small; three.js is loaded from inside it, and only when the device is up to it.
+const Intro = lazy(() => import('../story/Intro'));
+
+/** While the story chunk loads: its first still, so the first screen is a picture at once. */
+function IntroFallback() {
+  return (
+    <div data-intro className="relative h-svh overflow-hidden bg-ink">
+      <img src={`${import.meta.env.BASE_URL}images/story/still-1.webp`} alt="" fetchPriority="high" className="h-full w-full object-cover" />
+    </div>
+  );
+}
+
+/** "/" : the story first (full screen, no search box over it), then the search hero and the rest of the home page. */
 export default function HomePage() {
   const r = useResource(() => searchProjects({ limit: 50 }), []);
 
-  if (r.state === 'loading') return <div className="mx-auto max-w-5xl animate-pulse px-4 py-8"><div className="h-72 rounded-lg bg-ink/10" /></div>;
-  if (r.state !== 'ok') return <LoadError onRetry={r.state === 'error' ? r.retry : () => location.reload()} />;
+  if (r.state === 'error' || r.state === 'missing') return <LoadError onRetry={r.state === 'error' ? r.retry : () => location.reload()} />;
+
+  const story = <Suspense fallback={<IntroFallback />}><Intro projects={r.state === 'ok' ? r.data.items : []} /></Suspense>;
+
+  if (r.state === 'loading') return <>{story}<div className="mx-auto max-w-5xl animate-pulse px-4 py-8"><div className="h-72 rounded-lg bg-ink/10" /></div></>;
 
   const projects = r.data.items;
   const areas = [...new Set(projects.map((p) => p.neighborhood))];
@@ -19,6 +36,7 @@ export default function HomePage() {
 
   return (
     <>
+      {story}
       <Hero projects={projects} />
       <div className="mx-auto max-w-6xl space-y-24 px-4 py-20">
         <Section id="areas-h" title="ทำเลยอดนิยม">

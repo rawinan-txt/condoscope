@@ -3,6 +3,7 @@ import { createContext, useContext, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import type { Source } from '../services/api';
 import Footer from './Footer';
+import IntroSkip from './IntroSkip';
 import Navbar from './Navbar';
 
 const DataSourceContext = createContext<(s: Source | null) => void>(() => {});
@@ -12,10 +13,12 @@ export const useReportSource = () => useContext(DataSourceContext);
 export default function Layout() {
   const [source, setSource] = useState<Source | null>(null);
   // the explorer is one screen tall (header + building); the footer sits just below the fold
-  const fullBleed = useLocation().pathname.startsWith('/explorer/');
+  const { pathname } = useLocation();
+  const fullBleed = pathname.startsWith('/explorer/');
   return (
     <DataSourceContext.Provider value={setSource}>
       <div className="flex min-h-full flex-col">
+        {pathname === '/' && <IntroSkip />}
         <div data-screen className={fullBleed ? 'flex h-dvh flex-col' : 'contents'}>
         <Navbar />
         {source === 'fallback' && (

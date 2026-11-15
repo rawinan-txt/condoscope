@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   BoxGeometry, Color, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardMaterial, Quaternion, Vector3,
 } from 'three';
-import { unitColorRole } from '../status';
+import { storyUnitRole, unitColorRole } from '../status';
 import type { CutFloor, ExplorerApi } from '../useExplorer';
 import { interiorGlassMaterial } from './interiorMaterial';
 import { BALCONY_D, towerMatrix, towerTop } from './layout';
@@ -39,14 +39,19 @@ function hideAbove(mesh: InstancedMesh | null, items: Item[], cut: CutFloor) {
   mesh.computeBoundingSphere();
 }
 
+/** What Towers reads of the explorer state: the home page story supplies just this. */
+export type TowerSource = Pick<ExplorerApi, 'units' | 'buildings' | 'cutFloor' | 'isVisible' | 'selectedId' | 'hoveredId' | 'statusMode' | 'filters' | 'matches' | 'mine'>;
+
 interface Props {
-  x: ExplorerApi;
+  x: TowerSource;
+  /** Home page story only: free units glow on the lowest `storyFloor` floors, the rest is dark. Left out = the normal colours. */
+  storyFloor?: number;
   onHover(u: UnitView | null, e?: ThreeEvent<PointerEvent>): void;
   onPick(u: UnitView): void;
   unitsRef: React.RefObject<InstancedMesh | null>;
 }
 
-export default function Towers({ x, onHover, onPick, unitsRef }: Props) {
+export default function Towers({ x, storyFloor, onHover, onPick, unitsRef }: Props) {
   const { units, buildings, cutFloor } = x;
   const byId = useMemo(() => new Map(buildings.map((b) => [b.id, b])), [buildings]);
 
@@ -124,7 +129,7 @@ export default function Towers({ x, onHover, onPick, unitsRef }: Props) {
     let dirty = false;
     const c = new Color();
     units.forEach((u, i) => {
-      const role = unitColorRole(x, u);
+      const role = storyFloor === undefined ? unitColorRole(x, u) : storyUnitRole(u, byId.get(u.building_id)!.first_res_floor, storyFloor);
       const key = `${role.kind}|${role.color}`;
       if (last.current[i] === key) return;
       last.current[i] = key;
@@ -139,7 +144,7 @@ export default function Towers({ x, onHover, onPick, unitsRef }: Props) {
       mesh.setColorAt(i, tint);
     });
     if (dirty) { emit.needsUpdate = true; lit.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
-  }, [x, units, built, unitsRef]);
+  }, [x, units, built, unitsRef, storyFloor, byId]);
 
   const pick = (e: ThreeEvent<PointerEvent | MouseEvent>) => {
     // the first visible unit along the ray (hidden floors are skipped)

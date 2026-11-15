@@ -14,5 +14,8 @@ afterEach(() => {
   try { localStorage.clear(); } catch { /* storage blocked in a test */ }
 });
 
+// jsdom does not implement scrolling; the skip button scrolls to the search box
+if (typeof window !== 'undefined') { window.scrollTo = () => {}; Element.prototype.scrollIntoView = () => {}; }
+
 // the fallback dataset import can take >1s on a busy machine
 configure({ asyncUtilTimeout: 5000 });

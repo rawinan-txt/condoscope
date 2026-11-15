@@ -1,10 +1,10 @@
 const KB = 1024;
 
 /** gzip budgets. entry = everything loaded when the home page opens; map = measured 293.6 KB + 10% (plan 3, task 8). */
-export const BUDGETS = { entryGzip: 130 * KB, buildingGzip: 600 * KB, mapGzip: 323 * KB };
+export const BUDGETS = { entryGzip: 130 * KB, buildingGzip: 600 * KB, mapGzip: 323 * KB, storyGzip: 40 * KB };
 
 /** Chunks that must exist on their own and must not be loaded at start (name prefix → budget key or null). */
-const LAZY = { Building3D: 'buildingGzip', MapView: 'mapGzip', fallback: null };
+const LAZY = { Building3D: 'buildingGzip', MapView: 'mapGzip', fallback: null, StoryScene: 'storyGzip' };
 const FORBIDDEN_AT_START = ['WebGLRenderer', 'maplibre'];
 
 /**

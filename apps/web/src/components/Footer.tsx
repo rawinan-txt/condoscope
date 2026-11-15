@@ -1,3 +1,4 @@
+
 export default function Footer() {
   return (
     <footer className="bg-ink px-4 py-8 text-center text-xs leading-relaxed text-ink-muted">
