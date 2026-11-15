@@ -181,6 +181,9 @@ test('ไม่ล็อกการเลื่อน: คีย์บอร์
   await introShown(page);
   await page.keyboard.press('PageDown');
   await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 }).toBeGreaterThan(200);
+  // PageDown scrolls by an animation, and Chromium drops an End pressed while it still runs (seen in a CI trace: scrollY stayed at exactly one page, 630 of a 720px window), so wait until it stops
+  let last = -1;
+  await expect.poll(async () => { const y = await page.evaluate(() => window.scrollY); const done = y === last; last = y; return done; }, { timeout: 10_000, intervals: [300] }).toBe(true);
   await page.keyboard.press('End');
   await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 }).toBeGreaterThan(1000);
   await scrollTo(page, 0.5);
