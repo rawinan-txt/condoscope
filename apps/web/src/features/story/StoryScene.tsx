@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { ACESFilmicToneMapping, InstancedMesh } from 'three';
 import City from '../explorer/scene/City';
 import Landscape from '../explorer/scene/Landscape';
-import { projectBounds, type Bounds } from '../explorer/scene/layout';
+import { projectBounds, unitWorldCenter, type Bounds } from '../explorer/scene/layout';
 import Site from '../explorer/scene/Site';
 import Sky from '../explorer/scene/Sky';
 import { LOOK, uNight } from '../explorer/scene/time';
@@ -16,12 +16,15 @@ import { CHAPTER_START } from './timeline';
 
 const noop = () => {};
 
+/** Where the chosen unit is on the canvas, in percent of its width and height (the picture of the room opens from there). */
+export interface Anchor { x: number; y: number }
+
 /**
  * The 3D tier of the story: the explorer's scene without shadows, SSAO or controls, drawn only when the scroll moves (frameloop="demand").
  * The camera is a pure function of `p`, so a page opened mid-story is right from the first frame. `onFailure` asks the parent for the stills.
  */
-export default function StoryScene({ data, story, p, lit, onFailure }: {
-  data: ExplorerPayload; story: Story; p: MutableRefObject<number>; lit: number | undefined; onFailure(): void;
+export default function StoryScene({ data, story, p, anchor, lit, onFailure }: {
+  data: ExplorerPayload; story: Story; p: MutableRefObject<number>; anchor: MutableRefObject<Anchor | null>; lit: number | undefined; onFailure(): void;
 }) {
   const bounds = useMemo(() => projectBounds(data.buildings), [data.buildings]);
   const mobile = useMemo(() => matchMedia('(pointer: coarse)').matches, []);
@@ -44,7 +47,7 @@ export default function StoryScene({ data, story, p, lit, onFailure }: {
       style={{ pointerEvents: 'none', touchAction: 'pan-y' }}
       aria-hidden
     >
-      <Rig bounds={bounds} story={story} p={p} onFailure={onFailure} />
+      <Rig bounds={bounds} story={story} p={p} anchor={anchor} onFailure={onFailure} />
       <fog attach="fog" args={[look.fog, 350, 1500]} />
       <Sky time="dusk" />
       <hemisphereLight args={look.hemi} />
@@ -63,7 +66,7 @@ function poseAt(bounds: Bounds, story: Story, p: number) {
 }
 
 /** Moves the camera to the pose for the current `p`; draws a frame only when `p` changed, and gives up (onFailure) if frames are too slow. */
-function Rig({ bounds, story, p, onFailure }: { bounds: Bounds; story: Story; p: MutableRefObject<number>; onFailure(): void }) {
+function Rig({ bounds, story, p, anchor, onFailure }: { bounds: Bounds; story: Story; p: MutableRefObject<number>; anchor: MutableRefObject<Anchor | null>; onFailure(): void }) {
   const { camera, invalidate } = useThree();
   const drawn = useRef(NaN);
   const samples = useRef<number[]>([]);
@@ -88,6 +91,9 @@ function Rig({ bounds, story, p, onFailure }: { bounds: Bounds; story: Story; p:
     const pose = poseAt(bounds, story, p.current);
     camera.position.set(...pose.position);
     camera.lookAt(...pose.target);
+    camera.updateMatrixWorld();
+    const c = unitWorldCenter(story.building, story.unit).project(camera);
+    anchor.current = { x: (c.x + 1) * 50, y: (1 - c.y) * 50 };
   });
   return null;
 }

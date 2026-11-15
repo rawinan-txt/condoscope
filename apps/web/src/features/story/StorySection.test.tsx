@@ -54,6 +54,16 @@ describe('StorySection', () => {
     expect(screen.getByTestId('story-count')).toHaveTextContent(String(available()));
   });
 
+  it('has the living-room picture of the chosen unit type, marked as AI, ready for the dive', async () => {
+    show();
+    const link = await screen.findByRole('link', { name: 'เข้าสำรวจตึกนี้' });
+    const unitId = Number(link.getAttribute('href')!.split('unit=')[1]);
+    const unit = payload!.units.find((u) => u.id === unitId)!;
+    const img = screen.getByRole('img', { name: /ห้องนั่งเล่น/ });
+    expect(img.getAttribute('src')).toContain(`images/interiors/${unit.unit_type}/living.webp`);
+    expect(img.closest('[data-testid="story-interior"]')).toHaveTextContent('ภาพประกอบสร้างด้วย AI');
+  });
+
   it('renders nothing when no unit is available', async () => {
     payload = { ...payload!, units: payload!.units.map((u) => ({ ...u, status: 'sold' as const })) };
     show();

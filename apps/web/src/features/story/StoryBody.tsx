@@ -1,6 +1,7 @@
-import type { ExplorerPayload, Project } from '@condoscope/shared';
+import { imageFile, UNIT_TYPE_LABEL, type ExplorerPayload, type Project, type UnitView } from '@condoscope/shared';
 import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
+import AiBadge from '../../components/AiBadge';
 import HeroImage, { projectHero } from '../../components/HeroImage';
 import { scrimBackground } from '../../components/theme';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -11,7 +12,8 @@ import Counter from './Counter';
 import ThreeBoundary from '../explorer/ThreeBoundary';
 import { storyOf, type Story as StoryData } from './story';
 import StoryStills from './StoryStills';
-import { chapterAt, countAt, crossfadeToScene, litFloors, CHAPTER_START, type Chapter } from './timeline';
+import type { Anchor } from './StoryScene';
+import { chapterAt, countAt, crossfadeToScene, interiorReveal, litFloors, CHAPTER_START, type Chapter } from './timeline';
 import { chooseTier, type TierEnv } from './tier';
 import { useScrollProgress } from './useScrollProgress';
 
@@ -51,6 +53,7 @@ function Told({ project, story, data }: { project: Project; story: StoryData; da
   const chosen = useMemo(() => chooseTier(readEnv(reduced)), [reduced]);
   const tier = chosen === 'live' && failed ? 'stills' : chosen;
   const pRef = useRef(0);
+  const anchor = useRef<Anchor | null>(null);
   const track = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0); // progress in hundredths: at most 101 renders for the whole scroll
   useScrollProgress(track, (v) => { pRef.current = v; setStep(Math.round(v * 100)); });
@@ -75,6 +78,7 @@ function Told({ project, story, data }: { project: Project; story: StoryData; da
         <ul className="space-y-3 text-lg">{ORDER.filter((c) => c !== 'count' && c !== 'cta').map((c) => <li key={c}>{TEXT[c](project.name, story.available)}</li>)}</ul>
         <Counter value={story.available} total={story.available} />
         <p className="text-lg">{TEXT.count(project.name, story.available)}</p>
+        <div className="relative aspect-[16/9] overflow-hidden"><Interior unit={story.unit} reveal={1} anchor={null} /></div>
         {cta(true)}
       </div>
     );
@@ -89,11 +93,12 @@ function Told({ project, story, data }: { project: Project; story: StoryData; da
           <div className="absolute inset-0" style={{ opacity: crossfadeToScene(p) }}>
             <ThreeBoundary onError={() => { sceneFailed = true; setFailed(true); }} fallback={null}>
               <Suspense fallback={null}>
-                <StoryScene data={data} story={story} p={pRef} lit={p >= CHAPTER_START.lights ? litFloors(p, story.building.first_res_floor, story.building.last_res_floor) : undefined} onFailure={() => { sceneFailed = true; setFailed(true); }} />
+                <StoryScene data={data} story={story} p={pRef} anchor={anchor} lit={p >= CHAPTER_START.lights ? litFloors(p, story.building.first_res_floor, story.building.last_res_floor) : undefined} onFailure={() => { sceneFailed = true; setFailed(true); }} />
               </Suspense>
             </ThreeBoundary>
           </div>
         )}
+        <Interior unit={story.unit} reveal={interiorReveal(p)} anchor={tier === 'live' ? anchor.current : null} />
         <div className="absolute inset-0" style={{ background: scrimBackground }} aria-hidden />
         <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-16">
           <div className="grid">
@@ -107,6 +112,19 @@ function Told({ project, story, data }: { project: Project; story: StoryData; da
           <div className="mt-6">{cta(chapter === 'cta')}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** The living room of the chosen unit type (an AI picture). It opens from the unit's window while the camera arrives; without a window position (stills, static) it simply fades in. */
+function Interior({ unit, reveal, anchor }: { unit: UnitView; reveal: number; anchor: Anchor | null }) {
+  const style = anchor
+    ? { opacity: Math.min(1, reveal * 3), transform: `scale(${0.04 + 0.96 * reveal})`, transformOrigin: `${anchor.x}% ${anchor.y}%` }
+    : { opacity: reveal };
+  return (
+    <div data-testid="story-interior" className="absolute inset-0 overflow-hidden" style={style}>
+      <img src={`${import.meta.env.BASE_URL}images/interiors/${imageFile(unit.unit_type, 'living')}.webp`} alt={`ห้องนั่งเล่น แบบ ${UNIT_TYPE_LABEL[unit.unit_type]}`} className="h-full w-full object-cover" />
+      <AiBadge />
     </div>
   );
 }
