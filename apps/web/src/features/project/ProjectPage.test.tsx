@@ -1,5 +1,5 @@
 import { buildProjectDetail, formatMillion, generate, UNIT_TYPE_LABEL } from '@condoscope/shared';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
@@ -17,6 +17,32 @@ const open = (id: number | string = 1) => render(<MemoryRouter initialEntries={[
 const project = async () => screen.findByRole('heading', { level: 1, name: 'Noventa Ari' });
 
 describe('ProjectPage', () => {
+  describe('arriving from a card (router state)', () => {
+    const arrive = (state: unknown) => render(<MemoryRouter initialEntries={[{ pathname: '/project/1', state }]}><App /></MemoryRouter>);
+    const pending = () => vi.mocked(getProject).mockImplementationOnce(() => new Promise(() => {}));
+
+    it('shows the hero and the name at once, before the full data arrives', () => {
+      pending();
+      arrive({ project: detail.project });
+      expect(screen.getByRole('heading', { level: 1, name: 'Noventa Ari' })).toBeInTheDocument();
+    });
+
+    it('ignores a state that is not a project of this page', () => {
+      pending();
+      arrive({ project: 5 });
+      expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+      cleanup();
+      pending();
+      arrive({ project: { ...detail.project, id: 2, name: 'Someone else' } });
+      expect(screen.queryByText('Someone else')).toBeNull();
+    });
+
+    it('opened straight from a URL (no state) works as before', async () => {
+      open();
+      await project();
+    });
+  });
+
   it('shows name, location, price, amenities, buildings and description', async () => {
     open();
     await project();
