@@ -7,5 +7,5 @@ export const PUBLIC_CACHE = 'public, max-age=300, s-maxage=3600';
 /** Public GET answers are cacheable; health and every error already say no-store themselves (see errors.ts, routes/health.ts). */
 export const cache: MiddlewareHandler = async (c, next) => {
   await next();
-  if (c.req.method === 'GET' && c.res.status === 200 && !c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', PUBLIC_CACHE);
+  if ((c.req.method === 'GET' || c.req.method === 'HEAD') && c.res.status === 200 && !c.res.headers.has('Cache-Control')) c.res.headers.set('Cache-Control', PUBLIC_CACHE);
 };
