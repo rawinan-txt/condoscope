@@ -1,30 +1,43 @@
 import type { Building, UnitView } from '@condoscope/shared';
-import { remap, easeInOut } from './scroll';
+import { easeInOut, remap } from './scroll';
 
-/** Where each chapter starts (p, 0..1). The chapters are back to back; the numbers below are the only place that says so. */
-export const CHAPTER_START = { hero: 0, orbit: 0.14, lights: 0.4, count: 0.58, dive: 0.72, cta: 0.92 } as const;
-export const CHAPTERS = ['hero', 'orbit', 'lights', 'count', 'dive', 'cta'] as const;
+/**
+ * The story introduces the whole system, one chapter after another. Where each chapter starts (p, 0..1) is only written here.
+ * search = the first screen (the search box floats on the building) · filter · map · tower (floors light up, the total counts) · plan (fly into a room) · reserve.
+ */
+export const CHAPTER_START = { search: 0, filter: 0.1, map: 0.28, tower: 0.42, plan: 0.68, reserve: 0.88 } as const;
+export const CHAPTERS = ['search', 'filter', 'map', 'tower', 'plan', 'reserve'] as const;
 export type Chapter = (typeof CHAPTERS)[number];
 
-/** Whole turn the camera makes round the tower, degrees. */
-export const ORBIT_DEGREES = 200;
-const REVEAL_FROM = 0.84;
-const REVEAL_TO = 0.94;
+export const chapterAt = (p: number): Chapter => [...CHAPTERS].reverse().find((c) => p >= CHAPTER_START[c]) ?? 'search';
 
-export const chapterAt = (p: number): Chapter => [...CHAPTERS].reverse().find((c) => p >= CHAPTER_START[c]) ?? 'hero';
+/** The story shows three towers from three projects, one per stretch: 0 until the tower chapter, 1 through it, 2 for the flight into a room. */
+export const sceneAt = (p: number): 0 | 1 | 2 => (p < CHAPTER_START.tower ? 0 : p < CHAPTER_START.plan ? 1 : 2);
 
-/** 0 to 1 while the hero picture gives way to the 3D scene (the hero chapter). */
-export const crossfadeToScene = (p: number): number => easeInOut(remap(p, 0, CHAPTER_START.orbit));
+/** The search box fades out as the story moves on (it stays reachable from the menu and the closing buttons). */
+export const searchOpacity = (p: number): number => 1 - remap(p, 0.05, CHAPTER_START.filter);
 
-/** How many floors (of first..last) are lit: whole numbers, 0 before the chapter and all of them when it ends. */
+/** How far the camera has gone round the current tower, degrees. */
+export const ORBIT_FIRST = 200;
+export const ORBIT_SECOND = 70;
+export function orbitDegrees(p: number): number {
+  if (p < CHAPTER_START.tower) return ORBIT_FIRST * easeInOut(remap(p, CHAPTER_START.filter, CHAPTER_START.tower));
+  if (p < CHAPTER_START.plan) return ORBIT_SECOND * easeInOut(remap(p, CHAPTER_START.tower, CHAPTER_START.plan));
+  return 0;
+}
+
+/** How many floors (of first..last) are lit: whole numbers, 0 before the tower chapter and all of them by 58%. */
 export const litFloors = (p: number, firstFloor: number, lastFloor: number): number =>
-  Math.floor((lastFloor - firstFloor + 1) * remap(p, CHAPTER_START.lights, CHAPTER_START.count));
+  Math.floor((lastFloor - firstFloor + 1) * remap(p, CHAPTER_START.tower, 0.58));
 
-/** The counter: whole numbers 0..total, exactly total when the count chapter ends. */
-export const countAt = (p: number, total: number): number => Math.floor(total * easeInOut(remap(p, CHAPTER_START.count, CHAPTER_START.dive)));
+/** The counter: whole numbers 0..total, exactly total at 66%. */
+export const countAt = (p: number, total: number): number => Math.floor(total * easeInOut(remap(p, 0.5, 0.66)));
 
-/** 0 to 1 near the end of the dive: the picture of the room opens. */
-export const interiorReveal = (p: number): number => easeInOut(remap(p, REVEAL_FROM, REVEAL_TO));
+/** The flight into the room, 0..1, during the plan chapter. */
+export const diveProgress = (p: number): number => easeInOut(remap(p, CHAPTER_START.plan, CHAPTER_START.reserve));
+
+/** 0 to 1 near the end of the flight: the picture of the room opens. */
+export const interiorReveal = (p: number): number => easeInOut(remap(p, 0.78, CHAPTER_START.reserve));
 
 /** The room the story flies to: an available front unit close to 60% of the tower height (back facade only if no front unit is free); ties go to the lowest id. */
 export function pickShowcaseUnit(units: UnitView[], b: Building): UnitView | null {

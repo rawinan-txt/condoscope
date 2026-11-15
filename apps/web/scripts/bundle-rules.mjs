@@ -4,7 +4,7 @@ const KB = 1024;
 export const BUDGETS = { entryGzip: 130 * KB, buildingGzip: 600 * KB, mapGzip: 323 * KB, storyGzip: 40 * KB };
 
 /** Chunks that must exist on their own and must not be loaded at start (name prefix → budget key or null). */
-const LAZY = { Building3D: 'buildingGzip', MapView: 'mapGzip', fallback: null, StoryBody: 'storyGzip', StoryScene: 'storyGzip' };
+const LAZY = { Building3D: 'buildingGzip', MapView: 'mapGzip', fallback: null, StoryScene: 'storyGzip' };
 const FORBIDDEN_AT_START = ['WebGLRenderer', 'maplibre'];
 
 /**

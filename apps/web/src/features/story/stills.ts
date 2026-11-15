@@ -1,5 +1,5 @@
-/** Where (progress) each of the four pre-rendered stills is at full strength. */
-export const STILL_AT = [0.05, 0.3, 0.6, 0.85] as const;
+/** Where (progress) each of the four pre-rendered stills is at full strength: the first screen, the orbit, a second tower, the room. */
+export const STILL_AT = [0.03, 0.3, 0.55, 0.82] as const;
 
 /** Opacity of each still: a cross-fade between neighbours, the first/last held before/after, so the weights always add up to 1. */
 export function stillOpacities(p: number): number[] {
