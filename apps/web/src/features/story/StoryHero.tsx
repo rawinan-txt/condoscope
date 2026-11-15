@@ -107,7 +107,7 @@ function Staged({ projects, tier }: { projects: Project[]; tier: 'stills' | 'liv
   return (
     <>
       <div ref={track} className="story-track">
-        <div className="story-stage sticky top-0 h-[calc(100svh-3.5rem)] overflow-hidden bg-ink">
+        <div className="story-stage sticky top-0 h-svh overflow-hidden bg-ink">
           <StoryStills p={p} fallback="images/home-hero.webp" />
           {live && shown.scene && (
             <div className="absolute inset-0 transition-opacity duration-500" style={{ opacity: ready && !shown.dim ? 1 : 0 }}>
@@ -122,13 +122,14 @@ function Staged({ projects, tier }: { projects: Project[]; tier: 'stills' | 'liv
           <Interior unit={room} reveal={interiorReveal(p)} anchor={live && shown.index === 2 ? anchor.current : null} />
           <div className="absolute inset-0" style={{ background: scrimBackground }} aria-hidden />
 
-          <div className="absolute inset-0 flex flex-col justify-end">
+          {/* the stage is a full screen tall (it sticks at the top while the story plays); at the top of the page the 3.5rem menu bar sits above it, so the box gets 3.5rem of extra room below to stay inside the first screen */}
+          <div className="absolute inset-0 flex flex-col justify-end pb-14">
             <div inert={fade === 0} style={{ opacity: fade }} className={fade === 0 ? 'pointer-events-none' : undefined}><SearchBox projects={projects} /></div>
           </div>
           <button type="button" onClick={() => { const end = document.getElementById('story-end'); end?.scrollIntoView?.(); end?.focus({ preventScroll: true }); }}
             className="absolute left-4 top-4 z-20 -translate-y-24 bg-ivory px-4 py-2 text-ink focus:translate-y-0">ข้ามส่วนนี้</button>
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-16">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-16 text-white">
             <div className="grid">
               {STEPS.map((c) => (
                 <div key={c} data-active={c === chapter} className={`col-start-1 row-start-1 max-w-xl transition-opacity duration-500 ${c === chapter ? 'opacity-100' : 'opacity-0'}`}>

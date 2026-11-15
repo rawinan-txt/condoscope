@@ -69,9 +69,9 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await shot(page, 'explorer-mobile');
 });
 
-// The story section of the home page at three points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
+// The home page story at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
 test('ภาพหน้าจอส่วนเล่าเรื่อง', async ({ page }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(300_000);
   mkdirSync(dir, { recursive: true });
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
@@ -86,11 +86,10 @@ test('ภาพหน้าจอส่วนเล่าเรื่อง', as
   for (const [w, h, keep] of sizes) {
     await page.setViewportSize({ width: w, height: h });
     await page.goto('');
-    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.8));
-    await expect(page.getByRole('button', { name: 'ข้ามส่วนนี้' })).toBeAttached({ timeout: 30_000 });
-    for (const [name, f] of [['orbit', 0.27], ['count', 0.66], ['room', 0.93]] as const) {
+    await expect(page.locator('.story-stage canvas')).toBeAttached({ timeout: 90_000 });
+    for (const [name, f] of [['first', 0], ['filter', 0.2], ['tower', 0.58], ['room', 0.84], ['end', 1]] as const) {
       await scrollTo(f);
-      await page.waitForTimeout(w === 1400 ? 4000 : 2500);
+      await page.waitForTimeout(w === 1400 ? 4500 : 3000);
       await page.screenshot({ path: keep ? `${dir}story-${name}.png` : `${review}/story-${name}-${w}.png` });
     }
   }
