@@ -31,7 +31,7 @@ const TEXT: Record<Chapter, (name: string, available: number) => string> = {
   hero: () => 'เห็นตึกก่อน แล้วค่อยเลือกห้อง',
   orbit: (name) => `หมุนรอบ ${name} ดูทำเลและทิศของตึก`,
   lights: () => 'ห้องว่างสว่างขึ้นทีละชั้น',
-  count: (_n, available) => `ตอนนี้มี ${available} ห้องว่าง`,
+  count: () => 'ห้องว่างที่เลือกได้ตอนนี้', // the number itself is the Counter: its final value is read out by screen readers
   dive: () => 'เลือกห้องที่ใช่ แล้วเข้าไปดูข้างใน',
   cta: () => 'พร้อมแล้ว ไปเลือกห้องจากตัวตึกได้เลย',
 };

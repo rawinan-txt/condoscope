@@ -87,6 +87,10 @@ npm run screenshots   # ถ่ายภาพหน้าจอใหม่ใ�
 |---|---|
 | ![ดูทั้งชั้น](docs/screenshots/explorer-floor.png) | ![Explorer มือถือ](docs/screenshots/explorer-mobile.png) |
 
+| ส่วนเล่าเรื่อง: ตึกหมุน | ตัวเลขห้องว่างนับขึ้น | พุ่งเข้าห้อง |
+|---|---|---|
+| ![ตึกหมุน](docs/screenshots/story-orbit.png) | ![ตัวเลขห้องว่าง](docs/screenshots/story-count.png) | ![ภายในห้อง](docs/screenshots/story-room.png) |
+
 ## ข้อความข้อมูลจำลอง
 
 ข้อมูลโครงการ ราคา สถานะห้อง และแปลนทั้งหมดสร้างจากโปรแกรมสร้างข้อมูลจำลอง (deterministic) ไม่มีโครงการหรือชื่อจริง ไม่มีการขายจริง ภาพภายในห้องสร้างด้วย AI และมีป้ายกำกับในเว็บ แผนที่ใช้ข้อมูลจาก OpenStreetMap ผ่าน OpenFreeMap

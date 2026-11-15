@@ -35,7 +35,8 @@ describe('StorySection', () => {
     show();
     const section = (await screen.findByRole('button', { name: 'ข้ามส่วนนี้' })).closest('section')!;
     for (const t of [/เห็นตึกก่อน/, /หมุนรอบ/, /สว่างขึ้นทีละชั้น/, /เลือกห้องที่ใช่/]) expect(within(section).getByText(t)).toBeInTheDocument();
-    expect(within(section).getByText(`ตอนนี้มี ${available()} ห้องว่าง`)).toBeInTheDocument();
+    expect(within(section).getByText('ห้องว่างที่เลือกได้ตอนนี้')).toBeInTheDocument();
+    expect(within(section).getByText(`ห้องว่าง ${available()} ห้อง`)).toBeInTheDocument(); // the final count, for screen readers
   });
 
   it('links to the explorer with a chosen available unit', async () => {

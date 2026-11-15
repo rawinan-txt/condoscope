@@ -68,3 +68,30 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await page.waitForTimeout(300);
   await shot(page, 'explorer-mobile');
 });
+
+// The story section of the home page at three points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
+test('ภาพหน้าจอส่วนเล่าเรื่อง', async ({ page }) => {
+  test.setTimeout(240_000);
+  mkdirSync(dir, { recursive: true });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
+    Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
+  });
+  const scrollTo = (f: number) => page.evaluate((x) => {
+    const t = document.querySelector('.story-track')!;
+    window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY + (t.getBoundingClientRect().height - document.documentElement.clientHeight) * x);
+  }, f);
+  const review = process.env.STORY_REVIEW_DIR;
+  const sizes: [number, number, boolean][] = [[1400, 900, true], ...(review ? [[390, 844, false], [320, 640, false]] as [number, number, boolean][] : [])];
+  for (const [w, h, keep] of sizes) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('');
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.8));
+    await expect(page.getByRole('button', { name: 'ข้ามส่วนนี้' })).toBeAttached({ timeout: 30_000 });
+    for (const [name, f] of [['orbit', 0.27], ['count', 0.66], ['room', 0.93]] as const) {
+      await scrollTo(f);
+      await page.waitForTimeout(w === 1400 ? 4000 : 2500);
+      await page.screenshot({ path: keep ? `${dir}story-${name}.png` : `${review}/story-${name}-${w}.png` });
+    }
+  }
+});
