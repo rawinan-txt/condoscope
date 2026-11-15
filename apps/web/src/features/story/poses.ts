@@ -18,10 +18,20 @@ export function orbitPose(b: Bounds, p: number): Pose {
 
 const mix = (a: Vec3, b: Vec3, t: number): Vec3 => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 
-/** From the given pose (the end of the orbit) to the close view of the unit. */
+/**
+ * From the given pose (the end of the orbit) to the close view of the unit. The camera swings round the tower (angle, distance and
+ * height each blend on their own) instead of cutting straight across, which would pass through the building.
+ */
 export function diveGoal(b: Building, u: UnitView, p: number, from: Pose): Pose {
   const t = easeInOut(remap(p, CHAPTER_START.dive, CHAPTER_START.cta));
   const to = unitViewGoal(b, u);
-  return { position: mix(from.position, to.position, t), target: mix(from.target, to.target, t) };
+  if (t <= 0) return from;
+  if (t >= 1) return to;
+  const [cx, cz] = [from.target[0], from.target[2]];
+  const polar = (v: Vec3) => ({ a: Math.atan2(v[2] - cz, v[0] - cx), r: Math.hypot(v[0] - cx, v[2] - cz) });
+  const p0 = polar(from.position), p1 = polar(to.position);
+  let da = p1.a - p0.a;
+  da -= Math.round(da / (2 * Math.PI)) * 2 * Math.PI; // the short way round
+  const a = p0.a + da * t, r = p0.r + (p1.r - p0.r) * t;
+  return { position: [cx + r * Math.cos(a), from.position[1] + (to.position[1] - from.position[1]) * t, cz + r * Math.sin(a)], target: mix(from.target, to.target, t) };
 }
-

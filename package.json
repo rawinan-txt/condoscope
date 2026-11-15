@@ -15,7 +15,8 @@
     "api:dev": "npm run dev -w api",
     "thumbnails": "node apps/web/scripts/capture-thumbnails.mjs",
     "typecheck": "tsc -p packages/shared && tsc -p apps/api && tsc -p apps/api/test && tsc -p apps/web --noEmit",
-    "screenshots": "node apps/web/scripts/screenshots.mjs"
+    "screenshots": "node apps/web/scripts/screenshots.mjs",
+    "story-stills": "node apps/web/scripts/story-stills.mjs"
   },
   "devDependencies": {
     "yaml": "^2.9.1"

@@ -1,7 +1,7 @@
 import type { Building, Dataset, UnitView } from '@condoscope/shared';
 import { describe, expect, it } from 'vitest';
 import fallback from '../../data/fallback.json';
-import { homeView, projectBounds, unitViewGoal } from '../explorer/scene/layout';
+import { homeView, projectBounds, towerBox, unitViewGoal } from '../explorer/scene/layout';
 import { diveGoal, orbitPose } from './poses';
 import { chapterAt, countAt, crossfadeToScene, interiorReveal, litFloors, pickShowcaseUnit } from './timeline';
 
@@ -85,6 +85,16 @@ describe('dive', () => {
     expect(dist(end.position, goal.position)).toBeLessThan(1e-6);
     expect(dist(end.target, goal.target)).toBeLessThan(1e-6);
     expect(diveGoal(b, u, 0, from)).toEqual(from);
+  });
+  it('the camera never passes through the tower on its way in', () => {
+    const box = towerBox(b);
+    for (const u2 of units.filter((x) => x.status === 'available').slice(0, 40)) {
+      for (let p = 0.72; p <= 1.0001; p += 0.01) {
+        const [x, y, z] = diveGoal(b, u2, p, from).position;
+        const inside = x > box.min.x && x < box.max.x && y > box.min.y && y < box.max.y && z > box.min.z && z < box.max.z;
+        expect(inside, `unit ${u2.id} at p=${p.toFixed(2)}`).toBe(false);
+      }
+    }
   });
   it('interiorReveal is 0 until late in the dive, then 1', () => {
     expect(interiorReveal(0.5)).toBe(0);
