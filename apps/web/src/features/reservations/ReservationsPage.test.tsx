@@ -45,4 +45,10 @@ describe('ReservationsPage', () => {
     expect(screen.getAllByText('รายการนี้ใช้ไม่ได้แล้ว')).toHaveLength(1);
     expect(loadReservations().size).toBe(1);
   });
+
+  it('asks the API about at most 50 reservations, however many ids the browser holds', async () => {
+    saveReservations(new Set(Array.from({ length: 80 }, (_, i) => 999000 + i)));
+    at();
+    expect(await screen.findAllByText('รายการนี้ใช้ไม่ได้แล้ว')).toHaveLength(50);
+  });
 });
