@@ -6,7 +6,8 @@ import { open3D, panelTitle, visibleUnits } from './helpers';
 // README pictures. Only runs through `npm run screenshots` (SCREENSHOTS=1) so normal e2e runs do not rewrite tracked files.
 test.skip(!process.env.SCREENSHOTS, 'run with npm run screenshots');
 // README pictures show the full-quality scene at the desktop size, unlike the other specs (see playwright.config.ts)
-test.use({ viewport: { width: 1400, height: 900 }, storageState: { cookies: [], origins: [] } });
+// returning visitor (no intro); the intro test below removes the mark
+test.use({ viewport: { width: 1400, height: 900 }, storageState: { cookies: [], origins: [{ origin: `http://localhost:${process.env.E2E_PORT ?? 4321}`, localStorage: [{ name: 'condoscope.intro', value: 'seen' }] }] } });
 
 const dir = fileURLToPath(new URL('../../../docs/screenshots/', import.meta.url));
 const shot = (page: import('@playwright/test').Page, name: string) => page.screenshot({ path: `${dir}${name}.png` });
@@ -69,11 +70,12 @@ test('ภาพหน้าจอสำหรับ README (6 หน้า + ม
   await shot(page, 'explorer-mobile');
 });
 
-// The home page story at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
+// The first-visit intro at points of the scroll (desktop, the live 3D tier). STORY_REVIEW_DIR also takes the phone sizes, for looking at only.
 test('ภาพหน้าจอส่วนเล่าเรื่อง', async ({ page }) => {
   test.setTimeout(300_000);
   mkdirSync(dir, { recursive: true });
   await page.addInitScript(() => {
+    localStorage.removeItem('condoscope.intro'); // a first-time visitor
     Object.defineProperty(navigator, 'hardwareConcurrency', { value: 8 });
     Object.defineProperty(navigator, 'deviceMemory', { value: 8 });
   });
@@ -87,10 +89,10 @@ test('ภาพหน้าจอส่วนเล่าเรื่อง', as
     await page.setViewportSize({ width: w, height: h });
     await page.goto('');
     await expect(page.locator('.story-stage canvas')).toBeAttached({ timeout: 90_000 });
-    for (const [name, f] of [['first', 0], ['filter', 0.2], ['tower', 0.58], ['room', 0.84], ['end', 1]] as const) {
+    for (const [name, f] of [['intro-first', 0], ['intro-filter', 0.2], ['intro-tower', 0.58], ['intro-room', 0.84], ['intro-end', 1]] as const) {
       await scrollTo(f);
       await page.waitForTimeout(w === 1400 ? 4500 : 3000);
-      await page.screenshot({ path: keep ? `${dir}story-${name}.png` : `${review}/story-${name}-${w}.png` });
+      await page.screenshot({ path: keep ? `${dir}${name}.png` : `${review}/${name}-${w}.png` });
     }
   }
 });
